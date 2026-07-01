@@ -1,0 +1,666 @@
+<style>/* DHIS2 plugin stylesheet. The sandboxed iframe has no host CSS, so this is the whole
+   design system for the plugin (replaces shadcn). Theming is driven by the host: it sets
+   `data-openldr-theme="light|dark"` on <html> (at srcdoc build + live on host toggle), and
+   these tokens flip accordingly. Palette is a blue-forward variation of the host. */
+
+:root {
+  /* Light theme (default) — slate neutrals + a blue accent. */
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --accent-soft: #eff4ff;
+  --accent-soft-border: #bfdbfe;
+
+  --danger: #dc2626;
+  --danger-soft-bg: #fef2f2;
+  --danger-soft-border: #fecaca;
+  --ok: #15803d;
+  --ok-soft-bg: #f0fdf4;
+  --ok-soft-border: #bbf7d0;
+  --warn: #b45309;
+  --warn-soft-bg: #fffbeb;
+  --warn-soft-border: #fde68a;
+
+  --shadow: 0 6px 20px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 14px 40px rgba(15, 23, 42, 0.20);
+  --overlay: rgba(15, 23, 42, 0.40);
+  --ring: rgba(37, 99, 235, 0.35);
+
+  color-scheme: light;
+}
+
+:root[data-openldr-theme="dark"] {
+  /* Dark theme — navy-tinted surfaces (not flat black) + a brighter blue accent. */
+  --bg: #0c1322;
+  --surface: #141d30;
+  --surface-2: #1b263c;
+  --border: #2a3750;
+  --border-strong: #3a4a66;
+  --text: #e6edf6;
+  --text-muted: #9aa8bd;
+  --text-subtle: #6b7c96;
+
+  --accent: #5b9bff;
+  --accent-hover: #7badff;
+  --accent-contrast: #07101f;
+  --accent-soft: rgba(91, 155, 255, 0.14);
+  --accent-soft-border: rgba(91, 155, 255, 0.38);
+
+  --danger: #f87171;
+  --danger-soft-bg: rgba(248, 113, 113, 0.12);
+  --danger-soft-border: rgba(248, 113, 113, 0.32);
+  --ok: #4ade80;
+  --ok-soft-bg: rgba(74, 222, 128, 0.12);
+  --ok-soft-border: rgba(74, 222, 128, 0.30);
+  --warn: #fbbf24;
+  --warn-soft-bg: rgba(251, 191, 36, 0.12);
+  --warn-soft-border: rgba(251, 191, 36, 0.30);
+
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55);
+  --overlay: rgba(2, 6, 16, 0.60);
+  --ring: rgba(91, 155, 255, 0.45);
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+#app { height: 100%; }
+
+/* Shell: a fixed top-nav + a single internally-scrolling content area. Keeping the
+   scroll on .dhis2-screen (not <body>) avoids the spurious whole-iframe scrollbar. */
+.dhis2-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.dhis2-nav {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  align-items: stretch;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 12px;
+  /* Allow horizontal tab scrolling on narrow widths, but pin overflow-y: a bare
+     `overflow-x: auto` makes overflow-y compute to `auto` too, and the tabs'
+     margin-bottom:-1px (underline overlap) then triggers a spurious v-scrollbar. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.dhis2-tab {
+  font: inherit;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 11px 14px;
+  margin-bottom: -1px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 6px 6px 0 0;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.dhis2-tab:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+.dhis2-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.dhis2-tab-active {
+  color: var(--accent);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+.dhis2-tab-active:hover {
+  color: var(--accent);
+}
+
+.dhis2-screen {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.dhis2-screen::-webkit-scrollbar { width: 10px; height: 10px; }
+.dhis2-screen::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid var(--bg);
+}
+.dhis2-screen::-webkit-scrollbar-track { background: transparent; }
+
+.dhis2 {
+  padding: 20px;
+}
+.dhis2 h1 {
+  font-size: 18px;
+  margin: 0 0 14px;
+  letter-spacing: -0.01em;
+}
+.dhis2 .status { color: var(--text-muted); }
+.dhis2 .muted { color: var(--text-subtle); }
+
+/* Cards + shared primitives. */
+.dhis2 .cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dhis2 .card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.dhis2 .card h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+.dhis2 .error {
+  border: 1px solid var(--danger-soft-border);
+  background: var(--danger-soft-bg);
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+.dhis2 .error-text {
+  color: var(--danger);
+  margin: 8px 0 0;
+}
+.dhis2 .badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dhis2 .badge {
+  display: inline-block;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 2px 11px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.dhis2 .badge-on {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-border);
+  color: var(--accent);
+  font-weight: 600;
+}
+.dhis2 .kv,
+.dhis2 .counts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 6px 24px;
+}
+.dhis2 .kv > div,
+.dhis2 .counts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}
+.dhis2 .kv dt,
+.dhis2 .counts dt {
+  color: var(--text-muted);
+  margin: 0;
+}
+.dhis2 .kv dd,
+.dhis2 .counts dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.dhis2 .btn {
+  font: inherit;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: 7px;
+  padding: 7px 15px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.12s, border-color 0.12s;
+}
+.dhis2 .btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.dhis2 .btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.dhis2 .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dhis2 .link {
+  font: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+}
+.dhis2 .link:hover { text-decoration: underline; }
+.dhis2 .overview-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-bottom: 14px;
+}
+.dhis2 .recent-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.dhis2 .recent-title {
+  font-weight: 600;
+}
+.dhis2 .table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dhis2 .table th,
+.dhis2 .table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.dhis2 .table th {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.dhis2 .table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* Toasts. */
+.dhis2 .toast {
+  border-radius: 7px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.dhis2 .toast-ok {
+  border: 1px solid var(--ok-soft-border);
+  background: var(--ok-soft-bg);
+  color: var(--ok);
+}
+.dhis2 .toast-err {
+  border: 1px solid var(--danger-soft-border);
+  background: var(--danger-soft-bg);
+  color: var(--danger);
+}
+
+/* Org-unit mapping table. */
+.dhis2 .orgunits-pulled {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.dhis2 .orgunits-actions-col { width: 320px; }
+.dhis2 .orgunits-facility-name { font-weight: 600; }
+.dhis2 .orgunits-facility-id { font-size: 12px; color: var(--text-subtle); }
+.dhis2 .orgunits-empty {
+  text-align: center;
+  padding: 32px 8px;
+  color: var(--text-subtle);
+}
+.dhis2 .orgunits-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dhis2 .orgunits-picker {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Picker — minimal searchable single-select. */
+.dhis2 .picker { position: relative; }
+.dhis2 .picker-trigger {
+  font: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 7px 11px;
+  cursor: pointer;
+  text-align: left;
+}
+.dhis2 .picker-trigger:hover:not(:disabled) { border-color: var(--accent); }
+.dhis2 .picker-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.dhis2 .picker-trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+.dhis2 .picker-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dhis2 .picker-placeholder { color: var(--text-subtle); }
+.dhis2 .picker-caret { color: var(--text-subtle); font-size: 11px; }
+.dhis2 .picker-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.dhis2 .picker-search {
+  font: inherit;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 9px 11px;
+  outline: none;
+}
+.dhis2 .picker-options {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.dhis2 .picker-option {
+  font: inherit;
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 8px 11px;
+  cursor: pointer;
+  color: var(--text);
+}
+.dhis2 .picker-option:hover { background: var(--accent-soft); }
+.dhis2 .picker-option-selected {
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.dhis2 .picker-empty {
+  padding: 10px;
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+/* Schedules. */
+.dhis2 .sched-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.dhis2 .sched-field {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.dhis2 .sched-field .picker { min-width: 200px; }
+.dhis2 .sched-select,
+.dhis2 .sched-input {
+  font: inherit;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 7px 11px;
+}
+.dhis2 .sched-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.dhis2 .sched-actions-col { width: 160px; }
+.dhis2 .sched-mapping-name { font-weight: 600; }
+.dhis2 .sched-empty {
+  text-align: center;
+  padding: 32px 8px;
+  color: var(--text-subtle);
+}
+.dhis2 .sched-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dhis2 .sched-del { color: var(--danger); }
+
+/* Reusable Modal + confirm overlays. */
+.dhis2 .sched-confirm-overlay,
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay);
+}
+.dhis2 .sched-confirm,
+.modal-panel {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-panel {
+  width: 100%;
+  max-width: 460px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+}
+.dhis2 .sched-confirm { max-width: 360px; }
+.dhis2 .sched-confirm-title { font-weight: 600; margin: 0 0 6px; }
+.dhis2 .sched-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+.dhis2 .sched-confirm-del,
+.mappings-confirm-del,
+.dhis2 .btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+}
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.modal-title { font-size: 16px; font-weight: 600; margin: 0; }
+.modal-close {
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--text-subtle);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { display: grid; gap: 12px; }
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* Mappings list + run. */
+.dhis2 .mappings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dhis2 .mappings-head h1 { margin: 0; }
+.dhis2 .mappings-kind-col { width: 120px; }
+.dhis2 .mappings-actions-col { width: 180px; }
+.dhis2 .mappings-name { font-weight: 600; }
+.dhis2 .mappings-empty {
+  text-align: center;
+  padding: 32px 8px;
+  color: var(--text-subtle);
+}
+.dhis2 .mappings-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dhis2 .mappings-del { color: var(--danger); }
+
+/* Run dialog body. */
+.run-form { display: grid; gap: 12px; }
+.run-field { display: grid; gap: 4px; font-size: 13px; }
+.run-input,
+.me-input,
+.dhis2 .me-input {
+  font: inherit;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 7px 11px;
+}
+.run-input:focus-visible,
+.dhis2 .me-input:focus-visible,
+.dhis2 .sched-select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.run-actions { display: flex; gap: 8px; }
+.run-dry-btn,
+.dhis2 .me-validate-btn {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.run-dry-btn:hover,
+.dhis2 .me-validate-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+.run-result {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.run-num { font-weight: 600; font-variant-numeric: tabular-nums; }
+.run-skipped {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+.run-push-result { margin-top: 8px; }
+
+/* Mapping editor — the most complex screen. */
+.dhis2.mapping-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dhis2 .warn {
+  border: 1px solid var(--warn-soft-border);
+  background: var(--warn-soft-bg);
+  color: var(--warn);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.dhis2 .me-field { display: grid; gap: 4px; font-size: 13px; }
+.dhis2 .me-kind { max-width: 240px; }
+.dhis2 .me-hint { color: var(--warn); font-size: 12px; }
+.dhis2 .me-grid { display: grid; gap: 12px; }
+.dhis2 .me-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dhis2 .me-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dhis2 .me-rows { display: grid; gap: 8px; }
+.dhis2 .me-rows-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dhis2 .me-rows-title { font-weight: 600; }
+.dhis2 .me-row { display: grid; align-items: center; gap: 8px; }
+.dhis2 .me-row-2 { grid-template-columns: 1fr 1fr auto; }
+.dhis2 .me-row-3 { grid-template-columns: 1fr 1fr 1fr auto; }
+.dhis2 .me-remove { color: var(--danger); }
+.dhis2 .me-problems {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.dhis2 .me-problems-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--danger);
+}
+.dhis2 .me-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+</style><div id="app"></div><script>"use strict";(()=>{var Pe,T,rt,jt,Z,nt,it,dt,$e,ve,de,lt,Ke,Ve,Be,Qt,ke={},Ce=[],Gt=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i,Ue=Array.isArray;function J(e,n){for(var a in n)e[a]=n[a];return e}function ze(e){e&&e.parentNode&&e.parentNode.removeChild(e)}function Jt(e,n,a){var r,i,s,u={};for(s in n)s=="key"?r=n[s]:s=="ref"?i=n[s]:u[s]=n[s];if(arguments.length>2&&(u.children=arguments.length>3?Pe.call(arguments,2):a),typeof e=="function"&&e.defaultProps!=null)for(s in e.defaultProps)u[s]===void 0&&(u[s]=e.defaultProps[s]);return be(e,u,r,i,null)}function be(e,n,a,r,i){var s={type:e,props:n,key:a,ref:r,__k:null,__:null,__b:0,__e:null,__c:null,constructor:void 0,__v:i??++rt,__i:-1,__u:0};return i==null&&T.vnode!=null&&T.vnode(s),s}function z(e){return e.children}function ye(e,n){this.props=e,this.context=n}function se(e,n){if(n==null)return e.__?se(e.__,e.__i+1):null;for(var a;n<e.__k.length;n++)if((a=e.__k[n])!=null&&a.__e!=null)return a.__e;return typeof e.type=="function"?se(e):null}function Xt(e){if(e.__P&&e.__d){var n=e.__v,a=n.__e,r=[],i=[],s=J({},n);s.__v=n.__v+1,T.vnode&&T.vnode(s),We(e.__P,s,n,e.__n,e.__P.namespaceURI,32&n.__u?[a]:null,r,a??se(n),!!(32&n.__u),i),s.__v=n.__v,s.__.__k[s.__i]=s,mt(r,s,i),n.__e=n.__=null,s.__e!=a&&ct(s)}}function ct(e){if((e=e.__)!=null&&e.__c!=null)return e.__e=e.__c.base=null,e.__k.some(function(n){if(n!=null&&n.__e!=null)return e.__e=e.__c.base=n.__e}),ct(e)}function at(e){(!e.__d&&(e.__d=!0)&&Z.push(e)&&!we.__r++||nt!=T.debounceRendering)&&((nt=T.debounceRendering)||it)(we)}function we(){try{for(var e,n=1;Z.length;)Z.length>n&&Z.sort(dt),e=Z.shift(),n=Z.length,Xt(e)}finally{Z.length=we.__r=0}}function ut(e,n,a,r,i,s,u,p,g,l,b){var d,C,h,E,v,w,_,k=r&&r.__k||Ce,D=n.length;for(g=Zt(a,n,k,g,D),d=0;d<D;d++)(h=a.__k[d])!=null&&(C=h.__i!=-1&&k[h.__i]||ke,h.__i=d,w=We(e,h,C,i,s,u,p,g,l,b),E=h.__e,h.ref&&C.ref!=h.ref&&(C.ref&&je(C.ref,null,h),b.push(h.ref,h.__c||E,h)),v==null&&E!=null&&(v=E),(_=!!(4&h.__u))||C.__k===h.__k?(g=pt(h,g,e,_),_&&C.__e&&(C.__e=null)):typeof h.type=="function"&&w!==void 0?g=w:E&&(g=E.nextSibling),h.__u&=-7);return a.__e=v,g}function Zt(e,n,a,r,i){var s,u,p,g,l,b=a.length,d=b,C=0;for(e.__k=new Array(i),s=0;s<i;s++)(u=n[s])!=null&&typeof u!="boolean"&&typeof u!="function"?(typeof u=="string"||typeof u=="number"||typeof u=="bigint"||u.constructor==String?u=e.__k[s]=be(null,u,null,null,null):Ue(u)?u=e.__k[s]=be(z,{children:u},null,null,null):u.constructor===void 0&&u.__b>0?u=e.__k[s]=be(u.type,u.props,u.key,u.ref?u.ref:null,u.__v):e.__k[s]=u,g=s+C,u.__=e,u.__b=e.__b+1,p=null,(l=u.__i=Yt(u,a,g,d))!=-1&&(d--,(p=a[l])&&(p.__u|=2)),p==null||p.__v==null?(l==-1&&(i>b?C--:i<b&&C++),typeof u.type!="function"&&(u.__u|=4)):l!=g&&(l==g-1?C--:l==g+1?C++:(l>g?C--:C++,u.__u|=4))):e.__k[s]=null;if(d)for(s=0;s<b;s++)(p=a[s])!=null&&!(2&p.__u)&&(p.__e==r&&(r=se(p)),ht(p,p));return r}function pt(e,n,a,r){var i,s;if(typeof e.type=="function"){for(i=e.__k,s=0;i&&s<i.length;s++)i[s]&&(i[s].__=e,n=pt(i[s],n,a,r));return n}e.__e!=n&&(r&&(n&&e.type&&!n.parentNode&&(n=se(e)),a.insertBefore(e.__e,n||null)),n=e.__e);do n=n&&n.nextSibling;while(n!=null&&n.nodeType==8);return n}function Yt(e,n,a,r){var i,s,u,p=e.key,g=e.type,l=n[a],b=l!=null&&(2&l.__u)==0;if(l===null&&p==null||b&&p==l.key&&g==l.type)return a;if(r>(b?1:0)){for(i=a-1,s=a+1;i>=0||s<n.length;)if((l=n[u=i>=0?i--:s++])!=null&&!(2&l.__u)&&p==l.key&&g==l.type)return u}return-1}function ot(e,n,a){n[0]=="-"?e.setProperty(n,a??""):e[n]=a==null?"":typeof a!="number"||Gt.test(n)?a:a+"px"}function fe(e,n,a,r,i){var s,u;e:if(n=="style")if(typeof a=="string")e.style.cssText=a;else{if(typeof r=="string"&&(e.style.cssText=r=""),r)for(n in r)a&&n in a||ot(e.style,n,"");if(a)for(n in a)r&&a[n]==r[n]||ot(e.style,n,a[n])}else if(n[0]=="o"&&n[1]=="n")s=n!=(n=n.replace(lt,"$1")),u=n.toLowerCase(),n=u in e||n=="onFocusOut"||n=="onFocusIn"?u.slice(2):n.slice(2),e.l||(e.l={}),e.l[n+s]=a,a?r?a[de]=r[de]:(a[de]=Ke,e.addEventListener(n,s?Be:Ve,s)):e.removeEventListener(n,s?Be:Ve,s);else{if(i=="http://www.w3.org/2000/svg")n=n.replace(/xlink(H|:h)/,"h").replace(/sName$/,"s");else if(n!="width"&&n!="height"&&n!="href"&&n!="list"&&n!="form"&&n!="tabIndex"&&n!="download"&&n!="rowSpan"&&n!="colSpan"&&n!="role"&&n!="popover"&&n in e)try{e[n]=a??"";break e}catch{}typeof a=="function"||(a==null||a===!1&&n[4]!="-"?e.removeAttribute(n):e.setAttribute(n,n=="popover"&&a==1?"":a))}}function st(e){return function(n){if(this.l){var a=this.l[n.type+e];if(n[ve]==null)n[ve]=Ke++;else if(n[ve]<a[de])return;return a(T.event?T.event(n):n)}}}function We(e,n,a,r,i,s,u,p,g,l){var b,d,C,h,E,v,w,_,k,D,I,P,M,m,y,U=n.type;if(n.constructor!==void 0)return null;128&a.__u&&(g=!!(32&a.__u),s=[p=n.__e=a.__e]),(b=T.__b)&&b(n);e:if(typeof U=="function")try{if(_=n.props,k=U.prototype&&U.prototype.render,D=(b=U.contextType)&&r[b.__c],I=b?D?D.props.value:b.__:r,a.__c?w=(d=n.__c=a.__c).__=d.__E:(k?n.__c=d=new U(_,I):(n.__c=d=new ye(_,I),d.constructor=U,d.render=tn),D&&D.sub(d),d.state||(d.state={}),d.__n=r,C=d.__d=!0,d.__h=[],d._sb=[]),k&&d.__s==null&&(d.__s=d.state),k&&U.getDerivedStateFromProps!=null&&(d.__s==d.state&&(d.__s=J({},d.__s)),J(d.__s,U.getDerivedStateFromProps(_,d.__s))),h=d.props,E=d.state,d.__v=n,C)k&&U.getDerivedStateFromProps==null&&d.componentWillMount!=null&&d.componentWillMount(),k&&d.componentDidMount!=null&&d.__h.push(d.componentDidMount);else{if(k&&U.getDerivedStateFromProps==null&&_!==h&&d.componentWillReceiveProps!=null&&d.componentWillReceiveProps(_,I),n.__v==a.__v||!d.__e&&d.shouldComponentUpdate!=null&&d.shouldComponentUpdate(_,d.__s,I)===!1){n.__v!=a.__v&&(d.props=_,d.state=d.__s,d.__d=!1),n.__e=a.__e,n.__k=a.__k,n.__k.some(function(L){L&&(L.__=n)}),Ce.push.apply(d.__h,d._sb),d._sb=[],d.__h.length&&u.push(d);break e}d.componentWillUpdate!=null&&d.componentWillUpdate(_,d.__s,I),k&&d.componentDidUpdate!=null&&d.__h.push(function(){d.componentDidUpdate(h,E,v)})}if(d.context=I,d.props=_,d.__P=e,d.__e=!1,P=T.__r,M=0,k)d.state=d.__s,d.__d=!1,P&&P(n),b=d.render(d.props,d.state,d.context),Ce.push.apply(d.__h,d._sb),d._sb=[];else do d.__d=!1,P&&P(n),b=d.render(d.props,d.state,d.context),d.state=d.__s;while(d.__d&&++M<25);d.state=d.__s,d.getChildContext!=null&&(r=J(J({},r),d.getChildContext())),k&&!C&&d.getSnapshotBeforeUpdate!=null&&(v=d.getSnapshotBeforeUpdate(h,E)),m=b!=null&&b.type===z&&b.key==null?gt(b.props.children):b,p=ut(e,Ue(m)?m:[m],n,a,r,i,s,u,p,g,l),d.base=n.__e,n.__u&=-161,d.__h.length&&u.push(d),w&&(d.__E=d.__=null)}catch(L){if(n.__v=null,g||s!=null)if(L.then){for(n.__u|=g?160:128;p&&p.nodeType==8&&p.nextSibling;)p=p.nextSibling;s[s.indexOf(p)]=null,n.__e=p}else{for(y=s.length;y--;)ze(s[y]);qe(n)}else n.__e=a.__e,n.__k=a.__k,L.then||qe(n);T.__e(L,n,a)}else s==null&&n.__v==a.__v?(n.__k=a.__k,n.__e=a.__e):p=n.__e=en(a.__e,n,a,r,i,s,u,g,l);return(b=T.diffed)&&b(n),128&n.__u?void 0:p}function qe(e){e&&(e.__c&&(e.__c.__e=!0),e.__k&&e.__k.some(qe))}function mt(e,n,a){for(var r=0;r<a.length;r++)je(a[r],a[++r],a[++r]);T.__c&&T.__c(n,e),e.some(function(i){try{e=i.__h,i.__h=[],e.some(function(s){s.call(i)})}catch(s){T.__e(s,i.__v)}})}function gt(e){return typeof e!="object"||e==null||e.__b>0?e:Ue(e)?e.map(gt):e.constructor!==void 0?null:J({},e)}function en(e,n,a,r,i,s,u,p,g){var l,b,d,C,h,E,v,w=a.props||ke,_=n.props,k=n.type;if(k=="svg"?i="http://www.w3.org/2000/svg":k=="math"?i="http://www.w3.org/1998/Math/MathML":i||(i="http://www.w3.org/1999/xhtml"),s!=null){for(l=0;l<s.length;l++)if((h=s[l])&&"setAttribute"in h==!!k&&(k?h.localName==k:h.nodeType==3)){e=h,s[l]=null;break}}if(e==null){if(k==null)return document.createTextNode(_);e=document.createElementNS(i,k,_.is&&_),p&&(T.__m&&T.__m(n,s),p=!1),s=null}if(k==null)w===_||p&&e.data==_||(e.data=_);else{if(s=k=="textarea"&&_.defaultValue!=null?null:s&&Pe.call(e.childNodes),!p&&s!=null)for(w={},l=0;l<e.attributes.length;l++)w[(h=e.attributes[l]).name]=h.value;for(l in w)h=w[l],l=="dangerouslySetInnerHTML"?d=h:l=="children"||l in _||l=="value"&&"defaultValue"in _||l=="checked"&&"defaultChecked"in _||fe(e,l,null,h,i);for(l in _)h=_[l],l=="children"?C=h:l=="dangerouslySetInnerHTML"?b=h:l=="value"?E=h:l=="checked"?v=h:p&&typeof h!="function"||w[l]===h||fe(e,l,h,w[l],i);if(b)p||d&&(b.__html==d.__html||b.__html==e.innerHTML)||(e.innerHTML=b.__html),n.__k=[];else if(d&&(e.innerHTML=""),ut(n.type=="template"?e.content:e,Ue(C)?C:[C],n,a,r,k=="foreignObject"?"http://www.w3.org/1999/xhtml":i,s,u,s?s[0]:a.__k&&se(a,0),p,g),s!=null)for(l=s.length;l--;)ze(s[l]);p&&k!="textarea"||(l="value",k=="progress"&&E==null?e.removeAttribute("value"):E!=null&&(E!==e[l]||k=="progress"&&!E||k=="option"&&E!=w[l])&&fe(e,l,E,w[l],i),l="checked",v!=null&&v!=e[l]&&fe(e,l,v,w[l],i))}return e}function je(e,n,a){try{if(typeof e=="function"){var r=typeof e.__u=="function";r&&e.__u(),r&&n==null||(e.__u=e(n))}else e.current=n}catch(i){T.__e(i,a)}}function ht(e,n,a){var r,i;if(T.unmount&&T.unmount(e),(r=e.ref)&&(r.current&&r.current!=e.__e||je(r,null,n)),(r=e.__c)!=null){if(r.componentWillUnmount)try{r.componentWillUnmount()}catch(s){T.__e(s,n)}r.base=r.__P=null}if(r=e.__k)for(i=0;i<r.length;i++)r[i]&&ht(r[i],n,a||typeof e.type!="function");a||ze(e.__e),e.__c=e.__=e.__e=void 0}function tn(e,n,a){return this.constructor(e,a)}function _t(e,n,a){var r,i,s,u;n==document&&(n=document.documentElement),T.__&&T.__(e,n),i=(r=typeof a=="function")?null:a&&a.__k||n.__k,s=[],u=[],We(n,e=(!r&&a||n).__k=Jt(z,null,[e]),i||ke,ke,n.namespaceURI,!r&&a?[a]:i?null:n.firstChild?Pe.call(n.childNodes):null,s,!r&&a?a:i?i.__e:n.firstChild,r,u),mt(s,e,u)}Pe=Ce.slice,T={__e:function(e,n,a,r){for(var i,s,u;n=n.__;)if((i=n.__c)&&!i.__)try{if((s=i.constructor)&&s.getDerivedStateFromError!=null&&(i.setState(s.getDerivedStateFromError(e)),u=i.__d),i.componentDidCatch!=null&&(i.componentDidCatch(e,r||{}),u=i.__d),u)return i.__E=i}catch(p){e=p}throw e}},rt=0,jt=function(e){return e!=null&&e.constructor===void 0},ye.prototype.setState=function(e,n){var a;a=this.__s!=null&&this.__s!=this.state?this.__s:this.__s=J({},this.state),typeof e=="function"&&(e=e(J({},a),this.props)),e&&J(a,e),e!=null&&this.__v&&(n&&this._sb.push(n),at(this))},ye.prototype.forceUpdate=function(e){this.__v&&(this.__e=!0,e&&this.__h.push(e),at(this))},ye.prototype.render=z,Z=[],it=typeof Promise=="function"?Promise.prototype.then.bind(Promise.resolve()):setTimeout,dt=function(e,n){return e.__v.__b-n.__v.__b},we.__r=0,$e=Math.random().toString(8),ve="__d"+$e,de="__a"+$e,lt=/(PointerCapture)$|Capture$/i,Ke=0,Ve=st(!1),Be=st(!0),Qt=0;var le,A,Qe,ft,ce=0,Ut=[],N=T,vt=N.__b,bt=N.__r,yt=N.diffed,kt=N.__c,Ct=N.unmount,wt=N.__;function Je(e,n){N.__h&&N.__h(A,e,ce||n),ce=0;var a=A.__H||(A.__H={__:[],__h:[]});return e>=a.__.length&&a.__.push({}),a.__[e]}function f(e){return ce=1,nn(Et,e)}function nn(e,n,a){var r=Je(le++,2);if(r.t=e,!r.__c&&(r.__=[a?a(n):Et(void 0,n),function(p){var g=r.__N?r.__N[0]:r.__[0],l=r.t(g,p);g!==l&&(r.__N=[l,r.__[1]],r.__c.setState({}))}],r.__c=A,!A.__f)){var i=function(p,g,l){if(!r.__c.__H)return!0;var b=r.__c.__H.__.filter(function(C){return C.__c});if(b.every(function(C){return!C.__N}))return!s||s.call(this,p,g,l);var d=r.__c.props!==p;return b.some(function(C){if(C.__N){var h=C.__[0];C.__=C.__N,C.__N=void 0,h!==C.__[0]&&(d=!0)}}),s&&s.call(this,p,g,l)||d};A.__f=!0;var s=A.shouldComponentUpdate,u=A.componentWillUpdate;A.componentWillUpdate=function(p,g,l){if(this.__e){var b=s;s=void 0,i(p,g,l),s=b}u&&u.call(this,p,g,l)},A.shouldComponentUpdate=i}return r.__N||r.__}function H(e,n){var a=Je(le++,3);!N.__s&&St(a.__H,n)&&(a.__=e,a.u=n,A.__H.__h.push(a))}function Xe(e){return ce=5,V(function(){return{current:e}},[])}function V(e,n){var a=Je(le++,7);return St(a.__H,n)&&(a.__=e(),a.__H=n,a.__h=e),a.__}function ue(e,n){return ce=8,V(function(){return e},n)}function an(){for(var e;e=Ut.shift();){var n=e.__H;if(e.__P&&n)try{n.__h.some(Se),n.__h.some(Ge),n.__h=[]}catch(a){n.__h=[],N.__e(a,e.__v)}}}N.__b=function(e){A=null,vt&&vt(e)},N.__=function(e,n){e&&n.__k&&n.__k.__m&&(e.__m=n.__k.__m),wt&&wt(e,n)},N.__r=function(e){bt&&bt(e),le=0;var n=(A=e.__c).__H;n&&(Qe===A?(n.__h=[],A.__h=[],n.__.some(function(a){a.__N&&(a.__=a.__N),a.u=a.__N=void 0})):(n.__h.some(Se),n.__h.some(Ge),n.__h=[],le=0)),Qe=A},N.diffed=function(e){yt&&yt(e);var n=e.__c;n&&n.__H&&(n.__H.__h.length&&(Ut.push(n)!==1&&ft===N.requestAnimationFrame||((ft=N.requestAnimationFrame)||on)(an)),n.__H.__.some(function(a){a.u&&(a.__H=a.u),a.u=void 0})),Qe=A=null},N.__c=function(e,n){n.some(function(a){try{a.__h.some(Se),a.__h=a.__h.filter(function(r){return!r.__||Ge(r)})}catch(r){n.some(function(i){i.__h&&(i.__h=[])}),n=[],N.__e(r,a.__v)}}),kt&&kt(e,n)},N.unmount=function(e){Ct&&Ct(e);var n,a=e.__c;a&&a.__H&&(a.__H.__.some(function(r){try{Se(r)}catch(i){n=i}}),a.__H=void 0,n&&N.__e(n,a.__v))};var Pt=typeof requestAnimationFrame=="function";function on(e){var n,a=function(){clearTimeout(r),Pt&&cancelAnimationFrame(n),setTimeout(e)},r=setTimeout(a,35);Pt&&(n=requestAnimationFrame(a))}function Se(e){var n=A,a=e.__c;typeof a=="function"&&(e.__c=void 0,a()),A=n}function Ge(e){var n=A;e.__c=e.__(),A=n}function St(e,n){return!e||e.length!==n.length||n.some(function(a,r){return a!==e[r]})}function Et(e,n){return typeof n=="function"?n(e):n}function R(){let e=window.openldr;if(!e)throw new Error("window.openldr is not available \u2014 host did not inject the plugin SDK");return e}var Mt={"nav.dashboard":"Dashboard","nav.mappings":"Mappings","nav.schedules":"Schedules","nav.orgUnits":"Org Units","nav.pushes":"Pushes","common.loading":"Loading\u2026","picker.select":"Select\u2026","picker.search":"Search\u2026","picker.noMatches":"No matches","modal.close":"Close","dashboard.title":"DHIS2","dashboard.activeConnector":"Active connector","dashboard.configured":"Configured","dashboard.notConfigured":"Not configured","dashboard.name":"Name","dashboard.host":"Host","dashboard.noConnector":"No connector is configured. Add one in Settings \u25B8 Connectors before pushing to DHIS2.","dashboard.metadata":"Metadata","dashboard.pulling":"Pulling\u2026","dashboard.pullMetadata":"Pull metadata","dashboard.dataElements":"Data elements","dashboard.orgUnits":"Org units","dashboard.categoryOptionCombos":"Category option combos","dashboard.programs":"Programs","dashboard.programStages":"Program stages","dashboard.noMetadata":"No metadata cached yet. Pull to populate the counts.","dashboard.overview":"Overview","dashboard.mappings":"Mappings: ","dashboard.orgUnitMappings":"Org-unit mappings: ","dashboard.schedules":"Schedules: ","dashboard.manage":"Manage","dashboard.recentPushes":"Recent pushes","dashboard.viewAll":"View all","dashboard.noPushes":"No pushes yet","dashboard.when":"When","dashboard.status":"Status","dashboard.kindPeriod":"Kind / Period","mappings.title":"Mappings","mappings.newMapping":"New mapping","mappings.subtitle":"Mappings turn report rows into DHIS2 data values or tracker events.","mappings.name":"Name","mappings.kind":"Kind","mappings.none":"No mappings yet.","mappings.run":"Run","mappings.edit":"Edit","mappings.delete":"Delete","mappings.deletedToast":"Deleted {name}","mappings.deleteTitle":"Delete {name}?","mappings.deleteBody":"This mapping will be removed. This cannot be undone.","mappings.cancel":"Cancel","mappings.runTitle":"Run {name}","mappings.period":"Period","mappings.periodPlaceholder":"e.g. 202401","mappings.dryRun":"Dry run","mappings.push":"Push","mappings.values":"Values: ","mappings.skipped":" \xB7 Skipped: ","mappings.rowReason":"row {row}: {reason}","mappings.pushResult":"Push result: ","mappings.pushResultDetail":" \u2014 imported {imported} \xB7 updated {updated} \xB7 ignored {ignored} \xB7 conflicts {conflicts}","schedules.title":"Schedules","schedules.subtitle":"Schedules run mappings on a recurring period; event-driven ones also fire on new data.","schedules.mapping":"Mapping","schedules.pickMapping":"Pick a mapping","schedules.searchMappings":"Search mappings\u2026","schedules.period":"Period","schedules.monthly":"monthly","schedules.quarterly":"quarterly","schedules.yearly":"yearly","schedules.eventDriven":"Event-driven","schedules.create":"Create","schedules.enabled":"Enabled","schedules.nextDue":"Next due","schedules.none":"No schedules yet.","schedules.on":"on","schedules.off":"off","schedules.disable":"Disable","schedules.enable":"Enable","schedules.delete":"Delete","schedules.deleteTitle":"Delete this schedule?","schedules.deleteBody":"{mapping} will stop running. This cannot be undone.","schedules.cancel":"Cancel","orgUnits.title":"Org-unit mapping","orgUnits.pulledAt":"Metadata pulled at {when}","orgUnits.neverPulled":"Metadata never pulled","orgUnits.facility":"Facility","orgUnits.orgUnit":"Org unit","orgUnits.noFacilities":"No facilities found.","orgUnits.unmapped":"Unmapped","orgUnits.pickOrgUnit":"Pick an org unit","orgUnits.searchOrgUnits":"Search org units\u2026","orgUnits.clear":"Clear","orgUnits.mappedToast":"Mapped {facility}","orgUnits.clearedToast":"Cleared {facility}","pushes.title":"Push history","pushes.noPushes":"No pushes yet","pushes.when":"When","pushes.kind":"Kind","pushes.period":"Period","pushes.status":"Status","pushes.result":"Result","pushes.trigger":"Trigger","editor.newTitle":"New mapping","editor.editTitle":"Edit mapping","editor.notFound":"That mapping no longer exists.","editor.noMetadata":"No DHIS2 metadata cached yet. Pull metadata before you can pick data elements.","editor.kindLabel":"Mapping kind","editor.kindAggregate":"Aggregate","editor.kindTracker":"Tracker","editor.name":"Name","editor.connector":"Connector","editor.pickConnector":"Pick a connector","editor.searchConnectors":"Search connectors\u2026","editor.noConnectors":"No enabled connectors. Add one in Connectors first.","editor.sourceReport":"Source report","editor.pickReport":"Pick a report","editor.searchReports":"Search reports\u2026","editor.orgUnitColumn":"Org-unit column","editor.periodColumn":"Period column","editor.pickColumn":"Pick a column","editor.columns":"Columns","editor.addColumn":"Add column","editor.reportColumn":"Report column","editor.dataElement":"Data element","editor.coc":"Category option combo","editor.remove":"Remove","editor.sourceEventSource":"Source event source","editor.pickEventSource":"Pick an event source","editor.searchEventSources":"Search event sources\u2026","editor.program":"Program","editor.pickProgram":"Pick a program","editor.programStage":"Program stage","editor.pickStage":"Pick a stage","editor.eventDateColumn":"Event-date column","editor.idColumn":"Id column","editor.dataValues":"Data values","editor.addRow":"Add row","editor.eventColumn":"Event column","editor.noProblems":"No problems.","editor.validate":"Validate","editor.validateTitle":"Select a connector to validate","editor.save":"Save","editor.cancel":"Cancel"},sn={"nav.dashboard":"Tableau de bord","nav.mappings":"Mappings","nav.schedules":"Planifications","nav.orgUnits":"Unit\xE9s d'organisation","nav.pushes":"Envois","common.loading":"Chargement\u2026","picker.select":"S\xE9lectionner\u2026","picker.search":"Rechercher\u2026","picker.noMatches":"Aucune correspondance","modal.close":"Fermer","dashboard.title":"DHIS2","dashboard.activeConnector":"Connecteur actif","dashboard.configured":"Configur\xE9","dashboard.notConfigured":"Non configur\xE9","dashboard.name":"Nom","dashboard.host":"H\xF4te","dashboard.noConnector":"Aucun connecteur configur\xE9. Ajoutez-en un dans Param\xE8tres \u25B8 Connecteurs avant d'envoyer vers DHIS2.","dashboard.metadata":"M\xE9tadonn\xE9es","dashboard.pulling":"R\xE9cup\xE9ration\u2026","dashboard.pullMetadata":"R\xE9cup\xE9rer les m\xE9tadonn\xE9es","dashboard.dataElements":"\xC9l\xE9ments de donn\xE9es","dashboard.orgUnits":"Unit\xE9s d'organisation","dashboard.categoryOptionCombos":"Combos d'options de cat\xE9gorie","dashboard.programs":"Programmes","dashboard.programStages":"\xC9tapes de programme","dashboard.noMetadata":"Aucune m\xE9tadonn\xE9e en cache. R\xE9cup\xE9rez pour renseigner les compteurs.","dashboard.overview":"Vue d'ensemble","dashboard.mappings":"Mappings : ","dashboard.orgUnitMappings":"Mappings d'unit\xE9s d'organisation : ","dashboard.schedules":"Planifications : ","dashboard.manage":"G\xE9rer","dashboard.recentPushes":"Envois r\xE9cents","dashboard.viewAll":"Tout voir","dashboard.noPushes":"Aucun envoi pour l'instant","dashboard.when":"Quand","dashboard.status":"Statut","dashboard.kindPeriod":"Type / P\xE9riode","mappings.title":"Mappings","mappings.newMapping":"Nouveau mapping","mappings.subtitle":"Les mappings transforment les lignes de rapport en valeurs de donn\xE9es DHIS2 ou en \xE9v\xE9nements tracker.","mappings.name":"Nom","mappings.kind":"Type","mappings.none":"Aucun mapping pour l'instant.","mappings.run":"Ex\xE9cuter","mappings.edit":"Modifier","mappings.delete":"Supprimer","mappings.deletedToast":"{name} supprim\xE9","mappings.deleteTitle":"Supprimer {name} ?","mappings.deleteBody":"Ce mapping sera supprim\xE9. Cette action est irr\xE9versible.","mappings.cancel":"Annuler","mappings.runTitle":"Ex\xE9cuter {name}","mappings.period":"P\xE9riode","mappings.periodPlaceholder":"ex. 202401","mappings.dryRun":"Simulation","mappings.push":"Envoyer","mappings.values":"Valeurs : ","mappings.skipped":" \xB7 Ignor\xE9es : ","mappings.rowReason":"ligne {row} : {reason}","mappings.pushResult":"R\xE9sultat de l'envoi : ","mappings.pushResultDetail":" \u2014 import\xE9 {imported} \xB7 mis \xE0 jour {updated} \xB7 ignor\xE9 {ignored} \xB7 conflits {conflicts}","schedules.title":"Planifications","schedules.subtitle":"Les planifications ex\xE9cutent les mappings selon une p\xE9riode r\xE9currente ; celles pilot\xE9es par \xE9v\xE9nement se d\xE9clenchent aussi sur de nouvelles donn\xE9es.","schedules.mapping":"Mapping","schedules.pickMapping":"Choisir un mapping","schedules.searchMappings":"Rechercher des mappings\u2026","schedules.period":"P\xE9riode","schedules.monthly":"mensuel","schedules.quarterly":"trimestriel","schedules.yearly":"annuel","schedules.eventDriven":"Pilot\xE9 par \xE9v\xE9nement","schedules.create":"Cr\xE9er","schedules.enabled":"Activ\xE9","schedules.nextDue":"Prochaine \xE9ch\xE9ance","schedules.none":"Aucune planification pour l'instant.","schedules.on":"activ\xE9","schedules.off":"d\xE9sactiv\xE9","schedules.disable":"D\xE9sactiver","schedules.enable":"Activer","schedules.delete":"Supprimer","schedules.deleteTitle":"Supprimer cette planification ?","schedules.deleteBody":"{mapping} cessera de s'ex\xE9cuter. Cette action est irr\xE9versible.","schedules.cancel":"Annuler","orgUnits.title":"Mapping d'unit\xE9s d'organisation","orgUnits.pulledAt":"M\xE9tadonn\xE9es r\xE9cup\xE9r\xE9es le {when}","orgUnits.neverPulled":"M\xE9tadonn\xE9es jamais r\xE9cup\xE9r\xE9es","orgUnits.facility":"\xC9tablissement","orgUnits.orgUnit":"Unit\xE9 d'organisation","orgUnits.noFacilities":"Aucun \xE9tablissement trouv\xE9.","orgUnits.unmapped":"Non mapp\xE9","orgUnits.pickOrgUnit":"Choisir une unit\xE9 d'organisation","orgUnits.searchOrgUnits":"Rechercher des unit\xE9s d'organisation\u2026","orgUnits.clear":"Effacer","orgUnits.mappedToast":"{facility} mapp\xE9","orgUnits.clearedToast":"{facility} effac\xE9","pushes.title":"Historique des envois","pushes.noPushes":"Aucun envoi pour l'instant","pushes.when":"Quand","pushes.kind":"Type","pushes.period":"P\xE9riode","pushes.status":"Statut","pushes.result":"R\xE9sultat","pushes.trigger":"D\xE9clencheur","editor.newTitle":"Nouveau mapping","editor.editTitle":"Modifier le mapping","editor.notFound":"Ce mapping n'existe plus.","editor.noMetadata":"Aucune m\xE9tadonn\xE9e DHIS2 en cache. R\xE9cup\xE9rez les m\xE9tadonn\xE9es avant de pouvoir choisir des \xE9l\xE9ments de donn\xE9es.","editor.kindLabel":"Type de mapping","editor.kindAggregate":"Agr\xE9g\xE9","editor.kindTracker":"Tracker","editor.name":"Nom","editor.connector":"Connecteur","editor.pickConnector":"Choisir un connecteur","editor.searchConnectors":"Rechercher des connecteurs\u2026","editor.noConnectors":"Aucun connecteur activ\xE9. Ajoutez-en un dans Connecteurs d'abord.","editor.sourceReport":"Rapport source","editor.pickReport":"Choisir un rapport","editor.searchReports":"Rechercher des rapports\u2026","editor.orgUnitColumn":"Colonne d'unit\xE9 d'organisation","editor.periodColumn":"Colonne de p\xE9riode","editor.pickColumn":"Choisir une colonne","editor.columns":"Colonnes","editor.addColumn":"Ajouter une colonne","editor.reportColumn":"Colonne du rapport","editor.dataElement":"\xC9l\xE9ment de donn\xE9es","editor.coc":"Combo d'option de cat\xE9gorie","editor.remove":"Supprimer","editor.sourceEventSource":"Source d'\xE9v\xE9nement source","editor.pickEventSource":"Choisir une source d'\xE9v\xE9nement","editor.searchEventSources":"Rechercher des sources d'\xE9v\xE9nement\u2026","editor.program":"Programme","editor.pickProgram":"Choisir un programme","editor.programStage":"\xC9tape de programme","editor.pickStage":"Choisir une \xE9tape","editor.eventDateColumn":"Colonne de date d'\xE9v\xE9nement","editor.idColumn":"Colonne ID","editor.dataValues":"Valeurs de donn\xE9es","editor.addRow":"Ajouter une ligne","editor.eventColumn":"Colonne d'\xE9v\xE9nement","editor.noProblems":"Aucun probl\xE8me.","editor.validate":"Valider","editor.validateTitle":"S\xE9lectionnez un connecteur pour valider","editor.save":"Enregistrer","editor.cancel":"Annuler"},rn={"nav.dashboard":"Painel","nav.mappings":"Mapeamentos","nav.schedules":"Agendamentos","nav.orgUnits":"Unidades organizacionais","nav.pushes":"Envios","common.loading":"A carregar\u2026","picker.select":"Selecionar\u2026","picker.search":"Pesquisar\u2026","picker.noMatches":"Sem correspond\xEAncias","modal.close":"Fechar","dashboard.title":"DHIS2","dashboard.activeConnector":"Conector ativo","dashboard.configured":"Configurado","dashboard.notConfigured":"N\xE3o configurado","dashboard.name":"Nome","dashboard.host":"Anfitri\xE3o","dashboard.noConnector":"Nenhum conector configurado. Adicione um em Configura\xE7\xF5es \u25B8 Conectores antes de enviar para o DHIS2.","dashboard.metadata":"Metadados","dashboard.pulling":"A obter\u2026","dashboard.pullMetadata":"Obter metadados","dashboard.dataElements":"Elementos de dados","dashboard.orgUnits":"Unidades organizacionais","dashboard.categoryOptionCombos":"Combina\xE7\xF5es de op\xE7\xF5es de categoria","dashboard.programs":"Programas","dashboard.programStages":"Etapas do programa","dashboard.noMetadata":"Nenhum metadado em cache. Obtenha para preencher os contadores.","dashboard.overview":"Vis\xE3o geral","dashboard.mappings":"Mapeamentos: ","dashboard.orgUnitMappings":"Mapeamentos de unidades organizacionais: ","dashboard.schedules":"Agendamentos: ","dashboard.manage":"Gerir","dashboard.recentPushes":"Envios recentes","dashboard.viewAll":"Ver tudo","dashboard.noPushes":"Nenhum envio ainda","dashboard.when":"Quando","dashboard.status":"Estado","dashboard.kindPeriod":"Tipo / Per\xEDodo","mappings.title":"Mapeamentos","mappings.newMapping":"Novo mapeamento","mappings.subtitle":"Os mapeamentos transformam linhas de relat\xF3rio em valores de dados DHIS2 ou eventos tracker.","mappings.name":"Nome","mappings.kind":"Tipo","mappings.none":"Nenhum mapeamento ainda.","mappings.run":"Executar","mappings.edit":"Editar","mappings.delete":"Eliminar","mappings.deletedToast":"{name} eliminado","mappings.deleteTitle":"Eliminar {name}?","mappings.deleteBody":"Este mapeamento ser\xE1 removido. N\xE3o pode ser desfeito.","mappings.cancel":"Cancelar","mappings.runTitle":"Executar {name}","mappings.period":"Per\xEDodo","mappings.periodPlaceholder":"ex. 202401","mappings.dryRun":"Simula\xE7\xE3o","mappings.push":"Enviar","mappings.values":"Valores: ","mappings.skipped":" \xB7 Ignoradas: ","mappings.rowReason":"linha {row}: {reason}","mappings.pushResult":"Resultado do envio: ","mappings.pushResultDetail":" \u2014 importado {imported} \xB7 atualizado {updated} \xB7 ignorado {ignored} \xB7 conflitos {conflicts}","schedules.title":"Agendamentos","schedules.subtitle":"Os agendamentos executam mapeamentos num per\xEDodo recorrente; os orientados por eventos tamb\xE9m disparam com novos dados.","schedules.mapping":"Mapeamento","schedules.pickMapping":"Escolher um mapeamento","schedules.searchMappings":"Pesquisar mapeamentos\u2026","schedules.period":"Per\xEDodo","schedules.monthly":"mensal","schedules.quarterly":"trimestral","schedules.yearly":"anual","schedules.eventDriven":"Orientado por eventos","schedules.create":"Criar","schedules.enabled":"Ativado","schedules.nextDue":"Pr\xF3ximo prazo","schedules.none":"Nenhum agendamento ainda.","schedules.on":"ativado","schedules.off":"desativado","schedules.disable":"Desativar","schedules.enable":"Ativar","schedules.delete":"Eliminar","schedules.deleteTitle":"Eliminar este agendamento?","schedules.deleteBody":"{mapping} deixar\xE1 de ser executado. N\xE3o pode ser desfeito.","schedules.cancel":"Cancelar","orgUnits.title":"Mapeamento de unidades organizacionais","orgUnits.pulledAt":"Metadados obtidos em {when}","orgUnits.neverPulled":"Metadados nunca obtidos","orgUnits.facility":"Estabelecimento","orgUnits.orgUnit":"Unidade organizacional","orgUnits.noFacilities":"Nenhum estabelecimento encontrado.","orgUnits.unmapped":"Sem mapeamento","orgUnits.pickOrgUnit":"Escolher uma unidade organizacional","orgUnits.searchOrgUnits":"Pesquisar unidades organizacionais\u2026","orgUnits.clear":"Limpar","orgUnits.mappedToast":"{facility} mapeado","orgUnits.clearedToast":"{facility} limpo","pushes.title":"Hist\xF3rico de envios","pushes.noPushes":"Nenhum envio ainda","pushes.when":"Quando","pushes.kind":"Tipo","pushes.period":"Per\xEDodo","pushes.status":"Estado","pushes.result":"Resultado","pushes.trigger":"Desencadeador","editor.newTitle":"Novo mapeamento","editor.editTitle":"Editar mapeamento","editor.notFound":"Este mapeamento j\xE1 n\xE3o existe.","editor.noMetadata":"Nenhum metadado DHIS2 em cache. Obtenha os metadados antes de poder escolher elementos de dados.","editor.kindLabel":"Tipo de mapeamento","editor.kindAggregate":"Agregado","editor.kindTracker":"Tracker","editor.name":"Nome","editor.connector":"Conector","editor.pickConnector":"Escolher um conector","editor.searchConnectors":"Pesquisar conectores\u2026","editor.noConnectors":"Nenhum conector ativado. Adicione um em Conectores primeiro.","editor.sourceReport":"Relat\xF3rio de origem","editor.pickReport":"Escolher um relat\xF3rio","editor.searchReports":"Pesquisar relat\xF3rios\u2026","editor.orgUnitColumn":"Coluna de unidade organizacional","editor.periodColumn":"Coluna de per\xEDodo","editor.pickColumn":"Escolher uma coluna","editor.columns":"Colunas","editor.addColumn":"Adicionar coluna","editor.reportColumn":"Coluna do relat\xF3rio","editor.dataElement":"Elemento de dados","editor.coc":"Combina\xE7\xE3o de op\xE7\xE3o de categoria","editor.remove":"Remover","editor.sourceEventSource":"Fonte de eventos de origem","editor.pickEventSource":"Escolher uma fonte de eventos","editor.searchEventSources":"Pesquisar fontes de eventos\u2026","editor.program":"Programa","editor.pickProgram":"Escolher um programa","editor.programStage":"Etapa do programa","editor.pickStage":"Escolher uma etapa","editor.eventDateColumn":"Coluna de data do evento","editor.idColumn":"Coluna ID","editor.dataValues":"Valores de dados","editor.addRow":"Adicionar linha","editor.eventColumn":"Coluna de evento","editor.noProblems":"Sem problemas.","editor.validate":"Validar","editor.validateTitle":"Selecione um conector para validar","editor.save":"Guardar","editor.cancel":"Cancelar"},dn={en:Mt,fr:sn,pt:rn},Ee=null;function ln(){if(Ee)return Ee;let e;try{e=R().locale}catch{e=void 0}return Ee=e==="fr"||e==="pt"?e:"en",Ee}function o(e,n){let a=ln(),r=dn[a]?.[e]??Mt[e]??e;return n?r.replace(/\{(\w+)\}/g,(i,s)=>s in n?String(n[s]):i):r}var cn=0,Pn=Array.isArray;function t(e,n,a,r,i,s){n||(n={});var u,p,g=n;if("ref"in g)for(p in g={},n)p=="ref"?u=n[p]:g[p]=n[p];var l={type:e,props:g,key:a,ref:u,__k:null,__:null,__b:0,__e:null,__c:null,constructor:void 0,__v:--cn,__i:-1,__u:0,__source:i,__self:s};if(typeof e=="function"&&(u=e.defaultProps))for(p in u)g[p]===void 0&&(g[p]=u[p]);return T.vnode&&T.vnode(l),l}function Tt(e){return{dataElements:e?.dataElements?.length??0,orgUnits:e?.orgUnits?.length??0,categoryOptionCombos:e?.categoryOptionCombos?.length??0,programs:e?.programs?.length??0,programStages:e?.programStages?.length??0}}function pe(e){return Array.isArray(e)?e:[]}function Rt({onNavigate:e}){let[n,a]=f({phase:"loading"}),[r,i]=f(null),[s,u]=f(null),[p,g]=f([]),[l,b]=f(0),[d,C]=f(0),[h,E]=f(0),[v,w]=f(!1),[_,k]=f(null);H(()=>{let P=!0;return(async()=>{try{let M=R();await M.ready;let[m,y,U,L,Y,j]=await Promise.all([M.connectors.list(),M.storage.get("metadataCache","latest"),M.storage.list("pushes"),M.storage.list("mappings"),M.storage.list("orgUnitMaps"),M.storage.list("schedules")]);if(!P)return;let ee=pe(m);i(ee.find(q=>q.enabled)??null);let G=y?.metadata??null;u(G?Tt(G):null),g(pe(U).map(q=>q.doc).sort((q,Q)=>(Q.at??"").localeCompare(q.at??"")).slice(0,10)),b(pe(L).length),C(pe(Y).length),E(pe(j).length),a({phase:"ready"})}catch(M){P&&a({phase:"error",message:M instanceof Error?M.message:String(M)})}finally{document.body.setAttribute("data-openldr-ready","1")}})(),()=>{P=!1}},[]);async function D(){if(r){w(!0),k(null);try{let P=R(),M=await P.connectors.metadata(r.id),m=new Date().toISOString();await P.storage.put("metadataCache","latest",{metadata:M,pulledAt:m}),u(Tt(M))}catch(P){k(P instanceof Error?P.message:String(P))}finally{w(!1)}}}let I=!!r;return t("div",{class:"dhis2","data-testid":"dhis2-dashboard",children:[t("h1",{children:o("dashboard.title")}),n.phase==="loading"&&t("p",{class:"status muted",children:o("common.loading")}),n.phase==="error"&&t("div",{class:"error",role:"alert",children:n.message}),n.phase==="ready"&&t("div",{class:"cards",children:[t("section",{class:"card","data-testid":"active-connector",children:[t("h2",{children:o("dashboard.activeConnector")}),t("div",{class:"badges",children:t("span",{class:`badge ${I?"badge-on":""}`,children:I?o("dashboard.configured"):o("dashboard.notConfigured")})}),I?t("dl",{class:"kv",children:[t("div",{children:[t("dt",{children:o("dashboard.name")}),t("dd",{children:r?.name??"-"})]}),t("div",{children:[t("dt",{children:o("dashboard.host")}),t("dd",{children:r?.allowedHost??"-"})]})]}):t("p",{class:"muted",children:o("dashboard.noConnector")})]}),t("section",{class:"card","data-testid":"metadata-card",children:[t("h2",{children:o("dashboard.metadata")}),t("button",{type:"button",class:"btn",onClick:()=>void D(),disabled:!I||v,"data-testid":"dhis2-pull-metadata",children:v?o("dashboard.pulling"):o("dashboard.pullMetadata")}),_&&t("p",{class:"error-text",role:"alert",children:_}),s?t("dl",{class:"counts","data-testid":"metadata-counts",children:[[o("dashboard.dataElements"),s.dataElements],[o("dashboard.orgUnits"),s.orgUnits],[o("dashboard.categoryOptionCombos"),s.categoryOptionCombos],[o("dashboard.programs"),s.programs],[o("dashboard.programStages"),s.programStages]].map(([P,M])=>t("div",{children:[t("dt",{children:P}),t("dd",{children:M})]},P))}):t("p",{class:"muted",children:o("dashboard.noMetadata")})]}),t("section",{class:"card","data-testid":"overview-card",children:[t("h2",{children:o("dashboard.overview")}),t("div",{class:"overview-counts",children:[t("div",{children:[t("span",{class:"muted",children:o("dashboard.mappings")}),l," ",t("button",{type:"button",class:"link",onClick:()=>e?.("mappings"),"data-testid":"manage-mappings",children:o("dashboard.manage")})]}),t("div",{children:[t("span",{class:"muted",children:o("dashboard.orgUnitMappings")}),d," ",t("button",{type:"button",class:"link",onClick:()=>e?.("orgUnits"),"data-testid":"manage-orgunits",children:o("dashboard.manage")})]}),t("div",{children:[t("span",{class:"muted",children:o("dashboard.schedules")}),h," ",t("button",{type:"button",class:"link",onClick:()=>e?.("schedules"),"data-testid":"manage-schedules",children:o("dashboard.manage")})]})]}),t("div",{class:"recent",children:[t("div",{class:"recent-head",children:[t("span",{class:"recent-title",children:o("dashboard.recentPushes")}),t("button",{type:"button",class:"link",onClick:()=>e?.("pushes"),"data-testid":"view-all-pushes",children:o("dashboard.viewAll")})]}),p.length===0?t("p",{class:"muted",children:o("dashboard.noPushes")}):t("table",{class:"table","data-testid":"recent-pushes",children:[t("thead",{children:t("tr",{children:[t("th",{children:o("dashboard.when")}),t("th",{children:o("dashboard.status")}),t("th",{children:o("dashboard.kindPeriod")})]})}),t("tbody",{children:p.map((P,M)=>t("tr",{children:[t("td",{class:"muted",children:P.at?new Date(P.at).toLocaleString():"-"}),t("td",{children:P.status??"-"}),t("td",{children:[P.kind,P.period].filter(Boolean).join(" \xB7 ")||"-"})]},P.id??M))})]})]})]})]})]})}function Ze({open:e,title:n,onClose:a,children:r,testId:i}){return H(()=>{if(!e)return;let s=u=>{u.key==="Escape"&&a()};return document.addEventListener("keydown",s),()=>document.removeEventListener("keydown",s)},[e,a]),e?t("div",{class:"modal-overlay",onClick:()=>a(),children:t("div",{class:"modal-panel",role:"dialog","aria-modal":"true","aria-label":n,"data-testid":i,onClick:s=>s.stopPropagation(),children:[t("div",{class:"modal-head",children:[t("h2",{class:"modal-title",children:n}),t("button",{type:"button",class:"modal-close","aria-label":o("modal.close"),onClick:()=>a(),children:"\xD7"})]}),t("div",{class:"modal-body",children:r})]})}):null}function Dt(e){return Array.isArray(e)?e:[]}function un(e){return e.definition?.kind??"aggregate"}function It({onNavigate:e}){let[n,a]=f({phase:"loading"}),[r,i]=f([]),[s,u]=f(null),[p,g]=f(null),[l,b]=f(null),[d,C]=f(""),[h,E]=f(null),[v,w]=f(null),[_,k]=f(!1);async function D(){let y=await R().storage.list("mappings");i(Dt(y).map(U=>U.doc))}H(()=>{let y=!0;return(async()=>{try{await R().ready,await D(),y&&a({phase:"ready"})}catch(U){y&&a({phase:"error",message:U instanceof Error?U.message:String(U)})}finally{document.body.setAttribute("data-openldr-ready","1")}})(),()=>{y=!1}},[]),H(()=>{if(!s)return;let y=setTimeout(()=>u(null),5e3);return()=>clearTimeout(y)},[s]);function I(y){b(y),C(""),E(null),w(null)}async function P(y){if(l){k(!0),w(null);try{let U=R(),Y=(await U.storage.get("mappings",l.id))?.definition;if(!Y)throw new Error("mapping has no definition");let j=Y.connectorId;if(!j)throw new Error("mapping has no connector configured");let ee=await U.storage.list("orgUnitMaps"),G={};for(let Q of Dt(ee))Q.doc?.facilityId&&Q.doc?.orgUnitId&&(G[Q.doc.facilityId]=Q.doc.orgUnitId);let q=await U.connectors.push({connectorId:j,mapping:Y,orgUnitMap:G,period:d,dryRun:y});E(q)}catch(U){w(U instanceof Error?U.message:String(U))}finally{k(!1)}}}async function M(){if(!p)return;let y=p;g(null);try{await R().storage.delete("mappings",y.id),u({kind:"ok",text:o("mappings.deletedToast",{name:y.name})}),await D()}catch(U){u({kind:"err",text:U instanceof Error?U.message:String(U)})}}let m=h?h.build.payload.dataValues?.length??h.build.payload.events?.length??0:0;return t("div",{class:"dhis2","data-testid":"dhis2-mappings-page",children:[t("div",{class:"mappings-head",children:[t("h1",{children:o("mappings.title")}),t("button",{type:"button",class:"btn","data-testid":"new-mapping",onClick:()=>e?.("new"),children:o("mappings.newMapping")})]}),t("p",{class:"muted",children:o("mappings.subtitle")}),n.phase==="loading"&&t("p",{class:"status muted",children:o("common.loading")}),n.phase==="error"&&t("div",{class:"error",role:"alert",children:n.message}),s&&t("div",{class:s.kind==="ok"?"toast toast-ok":"toast toast-err",role:"status",children:s.text}),n.phase==="ready"&&t("table",{class:"table mappings-table",children:[t("thead",{children:t("tr",{children:[t("th",{children:o("mappings.name")}),t("th",{class:"mappings-kind-col",children:o("mappings.kind")}),t("th",{class:"mappings-actions-col"})]})}),t("tbody",{children:r.length===0?t("tr",{children:t("td",{colSpan:3,class:"muted mappings-empty",children:o("mappings.none")})}):r.map(y=>t("tr",{"data-testid":`mapping-row-${y.id}`,children:[t("td",{class:"mappings-name",children:y.name}),t("td",{children:t("span",{class:"badge",children:un(y)})}),t("td",{children:t("div",{class:"mappings-row-actions",children:[t("button",{type:"button",class:"link","data-testid":`run-${y.id}`,onClick:()=>I(y),children:o("mappings.run")}),t("button",{type:"button",class:"link","data-testid":`edit-${y.id}`,onClick:()=>e?.("edit",y.id),children:o("mappings.edit")}),t("button",{type:"button",class:"link mappings-del","data-testid":`delete-${y.id}`,onClick:()=>g(y),children:o("mappings.delete")})]})})]},y.id))})]}),t(Ze,{open:p!==null,title:o("mappings.deleteTitle",{name:p?.name??""}),onClose:()=>g(null),children:[t("p",{class:"muted",children:o("mappings.deleteBody")}),t("div",{class:"modal-actions",children:[t("button",{type:"button",class:"link",onClick:()=>g(null),children:o("mappings.cancel")}),t("button",{type:"button",class:"btn mappings-confirm-del","data-testid":"confirm-delete",onClick:()=>void M(),children:o("mappings.delete")})]})]}),t(Ze,{open:l!==null,title:o("mappings.runTitle",{name:l?.name??""}),onClose:()=>b(null),children:t("div",{class:"run-form",children:[v&&t("div",{class:"error",role:"alert",children:v}),t("label",{class:"run-field",children:[t("span",{class:"muted",children:o("mappings.period")}),t("input",{class:"run-input","data-testid":"run-period",value:d,placeholder:o("mappings.periodPlaceholder"),onInput:y=>C(y.currentTarget.value)})]}),t("div",{class:"run-actions",children:[t("button",{type:"button",class:"btn run-dry-btn","data-testid":"run-dry",disabled:_||!d,onClick:()=>void P(!0),children:o("mappings.dryRun")}),t("button",{type:"button",class:"btn","data-testid":"run-push",disabled:_||!d,onClick:()=>void P(!1),children:o("mappings.push")})]}),h&&t("div",{class:"run-result","data-testid":"run-result",children:[t("div",{children:[o("mappings.values"),t("span",{class:"run-num",children:m}),o("mappings.skipped"),t("span",{class:"run-num",children:h.build.skipped.length})]}),h.build.skipped.length>0&&t("ul",{class:"run-skipped",children:h.build.skipped.slice(0,10).map((y,U)=>t("li",{children:o("mappings.rowReason",{row:y.row,reason:y.reason})},U))}),h.result&&t("div",{class:"run-push-result",children:[o("mappings.pushResult"),t("span",{class:"run-num",children:h.result.status}),o("mappings.pushResultDetail",{imported:h.result.imported,updated:h.result.updated,ignored:h.result.ignored,conflicts:h.result.conflicts.length})]})]})]})})]})}function x(e){let{options:n,value:a,onChange:r,placeholder:i,searchPlaceholder:s,disabled:u,testId:p}=e,[g,l]=f(!1),[b,d]=f(""),C=Xe(null),h=Xe(null),E=V(()=>n.find(_=>_.value===a)??null,[n,a]),v=V(()=>{let _=b.trim().toLowerCase();return _?n.filter(k=>k.label.toLowerCase().includes(_)):n},[n,b]);H(()=>{g?h.current?.focus():d("")},[g]);function w(_){r(_),l(!1)}return t("div",{class:"picker",ref:C,"data-testid":p,onBlur:_=>{let k=_.relatedTarget;k&&C.current?.contains(k)||l(!1)},children:[t("button",{type:"button",class:"picker-trigger",disabled:u,"aria-haspopup":"listbox","aria-expanded":g,onClick:()=>{u||l(_=>!_)},children:[t("span",{class:E?"picker-label":"picker-label picker-placeholder",children:E?E.label:i??o("picker.select")}),t("span",{class:"picker-caret","aria-hidden":"true",children:"\u25BE"})]}),g&&t("div",{class:"picker-menu",role:"listbox",children:[t("input",{ref:h,type:"text",class:"picker-search",value:b,placeholder:s??o("picker.search"),onInput:_=>d(_.currentTarget.value),onKeyDown:_=>{_.key==="Escape"&&(_.stopPropagation(),l(!1))}}),t("div",{class:"picker-options",children:v.length===0?t("div",{class:"picker-empty",children:o("picker.noMatches")}):v.map(_=>t("button",{type:"button",role:"option","aria-selected":_.value===a,class:_.value===a?"picker-option picker-option-selected":"picker-option",onClick:()=>w(_.value),children:_.label},_.value))})]})]})}function At(e){return Array.isArray(e)?e:[]}function xt(){let[e,n]=f({phase:"loading"}),[a,r]=f([]),[i,s]=f([]),[u,p]=f(null),[g,l]=f(null),[b,d]=f(null),[C,h]=f("monthly"),[E,v]=f(!1);async function w(){let m=R(),[y,U]=await Promise.all([m.schedule.list(),m.storage.list("mappings")]);r(At(y)),s(At(U).map(L=>L.doc))}H(()=>{let m=!0;return(async()=>{try{await R().ready,await w(),m&&n({phase:"ready"})}catch(y){m&&n({phase:"error",message:y instanceof Error?y.message:String(y)})}finally{document.body.setAttribute("data-openldr-ready","1")}})(),()=>{m=!1}},[]),H(()=>{if(!u)return;let m=setTimeout(()=>p(null),5e3);return()=>clearTimeout(m)},[u]);let _=V(()=>i.map(m=>({value:m.id,label:m.name})),[i]),k=V(()=>new Map(i.map(m=>[m.id,m.name])),[i]);function D(m){p(m instanceof Error?m.message:String(m))}async function I(){if(!b)return;let y=i.find(U=>U.id===b)?.definition?.kind==="tracker"?"tracker":"aggregate";try{await R().schedule.register({mappingId:b,periodType:C,eventDriven:E,mode:y}),d(null),h("monthly"),v(!1),await w()}catch(U){D(U)}}async function P(m){try{await R().schedule.register({...m,enabled:!m.enabled}),await w()}catch(y){D(y)}}async function M(){if(!g)return;let m=g;l(null);try{await R().schedule.remove(m.id),await w()}catch(y){D(y)}}return t("div",{class:"dhis2","data-testid":"dhis2-schedules-page",children:[t("h1",{children:o("schedules.title")}),t("p",{class:"muted",children:o("schedules.subtitle")}),e.phase==="loading"&&t("p",{class:"status muted",children:o("common.loading")}),e.phase==="error"&&t("div",{class:"error",role:"alert",children:e.message}),u&&t("div",{class:"toast toast-err",role:"status",children:u}),e.phase==="ready"&&t(z,{children:[t("div",{class:"sched-form",children:[t("div",{class:"sched-field",children:[t("span",{class:"muted",children:o("schedules.mapping")}),t(x,{options:_,value:b,onChange:m=>d(m),placeholder:o("schedules.pickMapping"),searchPlaceholder:o("schedules.searchMappings"),disabled:_.length===0,testId:"new-mapping"})]}),t("label",{class:"sched-field",children:[t("span",{class:"muted",children:o("schedules.period")}),t("select",{class:"sched-select","data-testid":"new-period",value:C,onChange:m=>h(m.currentTarget.value),children:[t("option",{value:"monthly",children:o("schedules.monthly")}),t("option",{value:"quarterly",children:o("schedules.quarterly")}),t("option",{value:"yearly",children:o("schedules.yearly")})]})]}),t("label",{class:"sched-check",children:[t("input",{type:"checkbox",checked:E,onChange:m=>v(m.currentTarget.checked)}),o("schedules.eventDriven")]}),t("button",{type:"button",class:"btn","data-testid":"create-schedule",disabled:!b,onClick:()=>void I(),children:o("schedules.create")})]}),t("table",{class:"table sched-table",children:[t("thead",{children:t("tr",{children:[t("th",{children:o("schedules.mapping")}),t("th",{children:o("schedules.period")}),t("th",{children:o("schedules.eventDriven")}),t("th",{children:o("schedules.enabled")}),t("th",{children:o("schedules.nextDue")}),t("th",{class:"sched-actions-col"})]})}),t("tbody",{children:a.length===0?t("tr",{children:t("td",{colSpan:6,class:"muted sched-empty",children:o("schedules.none")})}):a.map(m=>t("tr",{"data-testid":`sched-row-${m.id}`,children:[t("td",{children:[t("span",{class:"sched-mapping-name",children:k.get(m.mappingId)??m.mappingId})," ",t("span",{class:"badge",children:m.mode})]}),t("td",{children:m.periodType}),t("td",{children:m.eventDriven?"\u2713":"\u2014"}),t("td",{children:m.enabled?t("span",{class:"badge badge-on",children:o("schedules.on")}):t("span",{class:"badge",children:o("schedules.off")})}),t("td",{class:"muted",children:m.nextDueAt?new Date(m.nextDueAt).toLocaleString():"\u2014"}),t("td",{children:t("div",{class:"sched-row-actions",children:[t("button",{type:"button",class:"link","data-testid":`toggle-${m.id}`,onClick:()=>void P(m),children:m.enabled?o("schedules.disable"):o("schedules.enable")}),t("button",{type:"button",class:"link sched-del","data-testid":`del-${m.id}`,onClick:()=>l(m),children:o("schedules.delete")})]})})]},m.id))})]})]}),g&&t("div",{class:"sched-confirm-overlay",role:"dialog","aria-modal":"true",children:t("div",{class:"sched-confirm",children:[t("p",{class:"sched-confirm-title",children:o("schedules.deleteTitle")}),t("p",{class:"muted",children:o("schedules.deleteBody",{mapping:k.get(g.mappingId)??g.mappingId})}),t("div",{class:"sched-confirm-actions",children:[t("button",{type:"button",class:"link",onClick:()=>l(null),children:o("schedules.cancel")}),t("button",{type:"button",class:"btn sched-confirm-del","data-testid":"confirm-delete",onClick:()=>void M(),children:o("schedules.delete")})]})]})})]})}function Ye(e){return Array.isArray(e)?e:[]}function Ot(){let[e,n]=f({phase:"loading"}),[a,r]=f([]),[i,s]=f([]),[u,p]=f(null),[g,l]=f(null);async function b(){let v=R(),[w,_,k]=await Promise.all([v.fhir.facilities(),v.storage.list("orgUnitMaps"),v.storage.get("metadataCache","latest")]),D=Ye(w),I=Ye(_).map(m=>m.doc),P=new Map(I.map(m=>[m.facilityId,m])),M=k;s(Ye(M?.metadata?.orgUnits)),p(M?.pulledAt??null),r(D.map(m=>{let y=P.get(m.id);return{facilityId:m.id,facilityName:m.name??m.id,orgUnitId:y?.orgUnitId??null,orgUnitName:y?.orgUnitName??null}}))}H(()=>{let v=!0;return(async()=>{try{await R().ready,await b(),v&&n({phase:"ready"})}catch(w){v&&n({phase:"error",message:w instanceof Error?w.message:String(w)})}finally{document.body.setAttribute("data-openldr-ready","1")}})(),()=>{v=!1}},[]),H(()=>{if(!g)return;let v=setTimeout(()=>l(null),5e3);return()=>clearTimeout(v)},[g]);let d=V(()=>i.map(v=>({value:v.id,label:v.name})),[i]),C=i.length===0;async function h(v,w){let _=i.find(k=>k.id===w);try{await R().storage.put("orgUnitMaps",v,{facilityId:v,orgUnitId:w,orgUnitName:_?.name??null}),l({kind:"ok",text:o("orgUnits.mappedToast",{facility:v})}),await b()}catch(k){l({kind:"err",text:k instanceof Error?k.message:String(k)})}}async function E(v){try{await R().storage.delete("orgUnitMaps",v),l({kind:"ok",text:o("orgUnits.clearedToast",{facility:v})}),await b()}catch(w){l({kind:"err",text:w instanceof Error?w.message:String(w)})}}return t("div",{class:"dhis2","data-testid":"dhis2-orgunits-page",children:[t("h1",{children:o("orgUnits.title")}),t("p",{class:"muted orgunits-pulled",children:u?o("orgUnits.pulledAt",{when:new Date(u).toLocaleString()}):o("orgUnits.neverPulled")}),e.phase==="loading"&&t("p",{class:"status muted",children:o("common.loading")}),e.phase==="error"&&t("div",{class:"error",role:"alert",children:e.message}),g&&t("div",{class:g.kind==="ok"?"toast toast-ok":"toast toast-err",role:"status",children:g.text}),e.phase==="ready"&&t("table",{class:"table orgunits-table",children:[t("thead",{children:t("tr",{children:[t("th",{children:o("orgUnits.facility")}),t("th",{children:o("orgUnits.orgUnit")}),t("th",{class:"orgunits-actions-col"})]})}),t("tbody",{children:a.length===0?t("tr",{children:t("td",{colSpan:3,class:"muted orgunits-empty",children:o("orgUnits.noFacilities")})}):a.map(v=>t("tr",{"data-testid":`orgunit-row-${v.facilityId}`,children:[t("td",{children:[t("div",{class:"orgunits-facility-name",children:v.facilityName}),t("div",{class:"muted orgunits-facility-id",children:v.facilityId})]}),t("td",{children:v.orgUnitId?t("span",{children:[v.orgUnitName??v.orgUnitId," ",t("span",{class:"muted",children:["(",v.orgUnitId,")"]})]}):t("span",{class:"badge",children:o("orgUnits.unmapped")})}),t("td",{children:t("div",{class:"orgunits-row-actions",children:[t("div",{class:"orgunits-picker",children:t(x,{options:d,value:v.orgUnitId,onChange:w=>void h(v.facilityId,w),placeholder:o("orgUnits.pickOrgUnit"),searchPlaceholder:o("orgUnits.searchOrgUnits"),disabled:C,testId:`orgunit-picker-${v.facilityId}`})}),v.orgUnitId&&t("button",{type:"button",class:"link",onClick:()=>void E(v.facilityId),children:o("orgUnits.clear")})]})})]},v.facilityId))})]})]})}function pn(e){return Array.isArray(e)?e:[]}function mn(e){if(!e)return"\u2014";let n=new Date(e);return Number.isNaN(n.getTime())?e:n.toLocaleString()}function gn(e){let n=[`${e.imported??0} imp`,`${e.updated??0} upd`,`${e.conflicts??0} conf`];return(e.skipped??0)>0&&n.push(`${e.skipped} skip`),n.join(" \xB7 ")}function Nt(){let[e,n]=f({phase:"loading"}),[a,r]=f([]);return H(()=>{let i=!0;return(async()=>{try{let s=R();await s.ready;let u=await s.storage.list("pushes");if(!i)return;r(pn(u).map(p=>p.doc).sort((p,g)=>(g.at??"").localeCompare(p.at??""))),n({phase:"ready"})}catch(s){i&&n({phase:"error",message:s instanceof Error?s.message:String(s)})}finally{document.body.setAttribute("data-openldr-ready","1")}})(),()=>{i=!1}},[]),t("div",{class:"dhis2","data-testid":"dhis2-pushes-page",children:[t("h1",{children:o("pushes.title")}),e.phase==="loading"&&t("p",{class:"status muted",children:o("common.loading")}),e.phase==="error"&&t("div",{class:"error",role:"alert",children:e.message}),e.phase==="ready"&&(a.length===0?t("p",{class:"muted",children:o("pushes.noPushes")}):t("table",{class:"table","data-testid":"pushes-table",children:[t("thead",{children:t("tr",{children:[t("th",{children:o("pushes.when")}),t("th",{children:o("pushes.kind")}),t("th",{children:o("pushes.period")}),t("th",{children:o("pushes.status")}),t("th",{children:o("pushes.result")}),t("th",{children:o("pushes.trigger")})]})}),t("tbody",{children:a.map((i,s)=>t("tr",{children:[t("td",{class:"muted",children:mn(i.at)}),t("td",{children:i.kind??"\u2014"}),t("td",{children:i.period??"\u2014"}),t("td",{children:i.status??"\u2014"}),t("td",{children:gn(i)}),t("td",{children:i.trigger??"\u2014"})]},i.id??s))})]}))]})}function W(e){return Array.isArray(e)?e:[]}function Ht({mappingId:e,onDone:n}){let a=e===void 0,[r,i]=f({phase:"loading"}),[s,u]=f(null),[p,g]=f([]),[l,b]=f([]),[d,C]=f(null),[h,E]=f([]),[v,w]=f("aggregate"),[_,k]=f(""),[D,I]=f(""),[P,M]=f(""),[m,y]=f(null),[U,L]=f(""),[Y,j]=f([]),[ee,G]=f(""),[q,Q]=f(""),[Me,te]=f([]),[re,Te]=f(""),[ne,Re]=f(""),[De,me]=f(""),[Ie,Ae]=f(""),[xe,Oe]=f(""),[Ne,He]=f(""),[Le,ae]=f([]);H(()=>{let c=!0;return(async()=>{try{let S=R();await S.ready;let[F,B,O,K]=await Promise.all([S.reports.list(),S.reports.eventSources(),S.storage.get("metadataCache","latest"),S.connectors.list()]);if(!c)return;g(W(F)),b(W(B));let ie=O?.metadata;if(C({dataElements:W(ie?.dataElements),categoryOptionCombos:W(ie?.categoryOptionCombos),programs:W(ie?.programs),programStages:W(ie?.programStages),orgUnits:W(ie?.orgUnits)}),E(W(K)),a){k(`mapping-${crypto.randomUUID()}`),c&&i({phase:"ready"});return}let _e=await S.storage.get("mappings",e);if(!_e){c&&i({phase:"not-found"});return}let $=_e.definition??{};if(!c)return;if(k(_e.id),I(_e.name),M($.connectorId??""),$.kind==="tracker")w("tracker"),Te($.source?.sourceId??""),Re($.program??""),me($.programStage??""),Ae($.orgUnitColumn??""),Oe($.eventDateColumn??""),He($.idColumn??""),ae(($.dataValues??[]).map(X=>({id:crypto.randomUUID(),column:X.column,dataElement:X.dataElement})));else if(w("aggregate"),L($.source?.reportId??""),G($.orgUnitColumn??""),Q($.periodColumn??""),te(($.columns??[]).map(X=>({id:crypto.randomUUID(),column:X.column,dataElement:X.dataElement,categoryOptionCombo:X.categoryOptionCombo??""}))),$.source?.reportId){let X=await S.reports.columns($.source.reportId).catch(()=>[]);c&&j(W(X))}c&&i({phase:"ready"})}catch(S){c&&i({phase:"error",message:S instanceof Error?S.message:String(S)})}finally{c&&document.body.setAttribute("data-openldr-ready","1")}})(),()=>{c=!1}},[e]);let $t=ue(async c=>{if(L(c),y(null),u(null),!c){j([]);return}try{let S=await R().reports.columns(c);j(W(S))}catch(S){u(S instanceof Error?S.message:String(S)),j([])}},[]),Vt=V(()=>l.find(c=>c.id===re)?.columns??[],[l,re]),Bt=V(()=>(d?.programStages??[]).filter(c=>c.program===ne),[d,ne]),et=V(()=>h.filter(c=>c.enabled),[h]),oe=(d?.dataElements.length??0)===0,ge=ue(()=>v==="tracker"?{kind:"tracker",id:_,name:D,...P?{connectorId:P}:{},source:{kind:"event-source",sourceId:re},program:ne,programStage:De,orgUnitColumn:Ie,eventDateColumn:xe,idColumn:Ne,dataValues:Le.filter(c=>c.column&&c.dataElement).map(c=>({column:c.column,dataElement:c.dataElement}))}:{kind:"aggregate",id:_,name:D,...P?{connectorId:P}:{},source:{kind:"report",reportId:U},orgUnitColumn:ee,...q?{periodColumn:q}:{},columns:Me.filter(c=>c.column&&c.dataElement).map(c=>({column:c.column,dataElement:c.dataElement,...c.categoryOptionCombo?{categoryOptionCombo:c.categoryOptionCombo}:{}}))},[v,_,D,P,U,ee,q,Me,re,ne,De,Ie,xe,Ne,Le]),qt=ue(async()=>{if(P){y(null);try{let c=await R().connectors.validate({connectorId:P,mapping:ge()});y(W(c))}catch(c){u(c instanceof Error?c.message:String(c))}}},[P,ge]),Kt=ue(async()=>{try{await R().storage.put("mappings",_,{id:_,name:D,definition:ge()}),n()}catch(c){u(c instanceof Error?c.message:String(c))}},[_,D,ge,n]);function zt(c){w(c),y(null),L(""),j([]),G(""),Q(""),te([]),Te(""),Re(""),me(""),Ae(""),Oe(""),He(""),ae([])}if(r.phase==="loading")return t("div",{class:"dhis2",children:t("p",{class:"status muted",children:o("common.loading")})});if(r.phase==="not-found")return t("div",{class:"dhis2",children:t("p",{class:"muted",children:o("editor.notFound")})});if(r.phase==="error")return t("div",{class:"dhis2",children:t("div",{class:"error",role:"alert",children:r.message})});let Fe=Y.map(c=>({value:c.key,label:c.label})),tt=(d?.dataElements??[]).map(c=>({value:c.id,label:c.name})),Wt=(d?.categoryOptionCombos??[]).map(c=>({value:c.id,label:c.name})),he=Vt.map(c=>({value:c.key,label:c.label}));return t("div",{class:"dhis2 mapping-editor","data-testid":"dhis2-mapping-editor",children:[t("h1",{children:a?o("editor.newTitle"):o("editor.editTitle")}),s&&t("div",{class:"error",role:"alert",children:s}),oe&&t("div",{class:"warn",role:"alert",children:o("editor.noMetadata")}),a&&t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.kindLabel")}),t("div",{class:"me-kind",children:t(x,{testId:"kind-select",value:v,onChange:c=>zt(c),options:[{value:"aggregate",label:o("editor.kindAggregate")},{value:"tracker",label:o("editor.kindTracker")}]})})]}),t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.name")}),t("input",{class:"me-input","data-testid":"mapping-name",value:D,onInput:c=>I(c.currentTarget.value)})]}),t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.connector")}),t(x,{testId:"connector-select",value:P,onChange:M,placeholder:o("editor.pickConnector"),searchPlaceholder:o("editor.searchConnectors"),options:et.map(c=>({value:c.id,label:c.name}))}),et.length===0&&t("span",{class:"me-hint",children:o("editor.noConnectors")})]}),v==="aggregate"?t(z,{children:[t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.sourceReport")}),t(x,{testId:"report-select",value:U,onChange:c=>void $t(c),placeholder:o("editor.pickReport"),searchPlaceholder:o("editor.searchReports"),options:p.map(c=>({value:c.id,label:c.name}))})]}),t("div",{class:"me-grid me-grid-2",children:[t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.orgUnitColumn")}),t(x,{testId:"orgunit-column-select",value:ee,onChange:G,placeholder:o("editor.pickColumn"),options:Fe})]}),t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.periodColumn")}),t(x,{testId:"period-column-select",value:q,onChange:Q,placeholder:o("editor.pickColumn"),options:Fe})]})]}),t("div",{class:"me-rows",children:[t("div",{class:"me-rows-head",children:[t("span",{class:"me-rows-title",children:o("editor.columns")}),t("button",{type:"button",class:"link","data-testid":"add-column",onClick:()=>te(c=>[...c,{id:crypto.randomUUID(),column:"",dataElement:"",categoryOptionCombo:""}]),children:o("editor.addColumn")})]}),Me.map((c,S)=>t("div",{class:"me-row me-row-3","data-testid":`column-row-${S}`,children:[t(x,{testId:`column-key-${S}`,value:c.column,onChange:F=>te(B=>B.map((O,K)=>K===S?{...O,column:F}:O)),placeholder:o("editor.reportColumn"),options:Fe}),t(x,{testId:`column-de-${S}`,disabled:oe,value:c.dataElement,onChange:F=>te(B=>B.map((O,K)=>K===S?{...O,dataElement:F}:O)),placeholder:o("editor.dataElement"),options:tt}),t(x,{testId:`column-coc-${S}`,disabled:oe,value:c.categoryOptionCombo,onChange:F=>te(B=>B.map((O,K)=>K===S?{...O,categoryOptionCombo:F}:O)),placeholder:o("editor.coc"),options:Wt}),t("button",{type:"button",class:"link me-remove",onClick:()=>te(F=>F.filter((B,O)=>O!==S)),children:o("editor.remove")})]},c.id))]})]}):t(z,{children:[t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.sourceEventSource")}),t(x,{testId:"event-source-select",value:re,onChange:c=>{Te(c),y(null)},placeholder:o("editor.pickEventSource"),searchPlaceholder:o("editor.searchEventSources"),options:l.map(c=>({value:c.id,label:c.name}))})]}),t("div",{class:"me-grid me-grid-2",children:[t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.program")}),t(x,{testId:"program-select",disabled:oe,value:ne,onChange:c=>{Re(c),me("")},placeholder:o("editor.pickProgram"),options:(d?.programs??[]).map(c=>({value:c.id,label:c.name}))})]}),t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.programStage")}),t(x,{testId:"program-stage-select",disabled:oe||!ne,value:De,onChange:me,placeholder:o("editor.pickStage"),options:Bt.map(c=>({value:c.id,label:c.name}))})]})]}),t("div",{class:"me-grid me-grid-3",children:[t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.orgUnitColumn")}),t(x,{testId:"tracker-orgunit-select",value:Ie,onChange:Ae,placeholder:o("editor.pickColumn"),options:he})]}),t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.eventDateColumn")}),t(x,{testId:"tracker-eventdate-select",value:xe,onChange:Oe,placeholder:o("editor.pickColumn"),options:he})]}),t("label",{class:"me-field",children:[t("span",{class:"muted",children:o("editor.idColumn")}),t(x,{testId:"tracker-id-select",value:Ne,onChange:He,placeholder:o("editor.pickColumn"),options:he})]})]}),t("div",{class:"me-rows",children:[t("div",{class:"me-rows-head",children:[t("span",{class:"me-rows-title",children:o("editor.dataValues")}),t("button",{type:"button",class:"link","data-testid":"add-datavalue",onClick:()=>ae(c=>[...c,{id:crypto.randomUUID(),column:"",dataElement:""}]),children:o("editor.addRow")})]}),Le.map((c,S)=>t("div",{class:"me-row me-row-2","data-testid":`dv-row-${S}`,children:[t(x,{testId:`dv-col-${S}`,value:c.column,onChange:F=>ae(B=>B.map((O,K)=>K===S?{...O,column:F}:O)),placeholder:o("editor.eventColumn"),options:he}),t(x,{testId:`dv-de-${S}`,disabled:oe,value:c.dataElement,onChange:F=>ae(B=>B.map((O,K)=>K===S?{...O,dataElement:F}:O)),placeholder:o("editor.dataElement"),options:tt}),t("button",{type:"button",class:"link me-remove",onClick:()=>ae(F=>F.filter((B,O)=>O!==S)),children:o("editor.remove")})]},c.id))]})]}),m!==null&&t("div",{class:"me-problems","data-testid":"validate-problems",children:m.length===0?t("span",{class:"muted",children:o("editor.noProblems")}):t("ul",{class:"me-problems-list",children:m.map((c,S)=>t("li",{children:c},S))})}),t("div",{class:"me-actions",children:[t("button",{type:"button",class:"btn me-validate-btn","data-testid":"validate-mapping",disabled:!P,title:P?void 0:o("editor.validateTitle"),onClick:()=>void qt(),children:o("editor.validate")}),t("button",{type:"button",class:"btn","data-testid":"save-mapping",onClick:()=>void Kt(),children:o("editor.save")}),t("button",{type:"button",class:"link",onClick:n,children:o("editor.cancel")})]})]})}var hn=[{screen:"dashboard",labelKey:"nav.dashboard"},{screen:"mappings",labelKey:"nav.mappings"},{screen:"schedules",labelKey:"nav.schedules"},{screen:"orgUnits",labelKey:"nav.orgUnits"},{screen:"pushes",labelKey:"nav.pushes"}];function Lt(){let[e,n]=f({screen:"dashboard"}),a=e.screen==="editor"?"mappings":e.screen;return t("div",{class:"dhis2-shell",children:[t("nav",{class:"dhis2-nav","data-testid":"dhis2-nav",children:hn.map(r=>t("button",{type:"button",class:`dhis2-tab${a===r.screen?" dhis2-tab-active":""}`,"data-testid":`nav-${r.screen}`,"aria-current":a===r.screen?"page":void 0,onClick:()=>n({screen:r.screen}),children:o(r.labelKey)},r.screen))}),t("main",{class:"dhis2-screen",children:[e.screen==="dashboard"&&t(Rt,{onNavigate:r=>{(r==="mappings"||r==="orgUnits"||r==="schedules"||r==="pushes")&&n({screen:r})}}),e.screen==="mappings"&&t(It,{onNavigate:(r,i)=>{r==="new"?n({screen:"editor"}):r==="edit"&&n({screen:"editor",mappingId:i})}}),e.screen==="schedules"&&t(xt,{}),e.screen==="orgUnits"&&t(Ot,{}),e.screen==="pushes"&&t(Nt,{}),e.screen==="editor"&&t(Ht,{mappingId:e.mappingId,onDone:()=>n({screen:"mappings"})})]})]})}var Ft=document.getElementById("app");Ft&&_t(t(Lt,{}),Ft);})();
+</script>

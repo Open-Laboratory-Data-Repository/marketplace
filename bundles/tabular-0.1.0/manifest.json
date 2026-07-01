@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "type": "plugin",
+  "id": "tabular",
+  "version": "0.1.0",
+  "description": "CSV/Excel -> FHIR R4 ingestion plugin (configurable mapping)",
+  "readme": "",
+  "license": "Apache-2.0",
+  "publisher": {
+    "id": "openldr-ref",
+    "name": "OpenLDR Reference Publisher",
+    "keyFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+  },
+  "compatibility": {
+    "ceVersion": "*"
+  },
+  "dependencies": [],
+  "capabilities": [
+    {
+      "kind": "read-input",
+      "formats": [
+        "csv",
+        "xlsx"
+      ]
+    },
+    {
+      "kind": "emit-fhir",
+      "resourceTypes": [
+        "Patient",
+        "Specimen",
+        "Observation"
+      ]
+    }
+  ],
+  "source": "local-file",
+  "payload": {
+    "kind": "plugin",
+    "pluginKind": "source",
+    "wasmSha256": "0526b8479bf18b302879665fe20f8d9981fd6dd06f9523b2cae62af1088b5cf5",
+    "entrypoint": "convert",
+    "entrypoints": [
+      "wf_convert"
+    ],
+    "wasi": true,
+    "limits": {
+      "memoryMb": 256,
+      "timeoutMs": 30000
+    },
+    "workflowNodes": [
+      {
+        "id": "convert",
+        "label": "CSV/Excel → items",
+        "kind": "transform",
+        "description": "",
+        "entrypoint": "wf_convert",
+        "ports": {
+          "inputs": [
+            {
+              "name": "file",
+              "binary": false
+            }
+          ],
+          "outputs": [
+            {
+              "name": "out",
+              "binary": false
+            }
+          ]
+        },
+        "capabilities": [],
+        "config": [
+          {
+            "key": "output",
+            "label": "Output",
+            "type": "select",
+            "required": true,
+            "default": "fhir",
+            "options": [
+              {
+                "value": "fhir",
+                "label": "FHIR resources"
+              },
+              {
+                "value": "rows",
+                "label": "Parsed rows"
+              }
+            ]
+          },
+          {
+            "key": "mapping",
+            "label": "Column mapping",
+            "type": "json",
+            "required": false
+          },
+          {
+            "key": "sheet",
+            "label": "Sheet (Excel)",
+            "type": "text",
+            "required": false
+          }
+        ],
+        "abi": "bytes",
+        "binaryField": "file"
+      }
+    ]
+  },
+  "signature": "f4982b11b1f5417dd629d645b4e43f05ebf7b548b089622ef9712e9cbb40585f096587661b735200113faf3957c1cc33fc339218cf57335ae8bc8dd5fb750e08"
+}

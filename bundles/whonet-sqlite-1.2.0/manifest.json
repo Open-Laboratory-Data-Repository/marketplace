@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "type": "plugin",
+  "id": "whonet-sqlite",
+  "version": "1.2.0",
+  "description": "WHONET SQLite -> FHIR R4 (signed marketplace artifact)",
+  "readme": "",
+  "license": "Apache-2.0",
+  "publisher": {
+    "id": "openldr-ref",
+    "name": "OpenLDR Reference Publisher",
+    "keyFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+  },
+  "compatibility": {
+    "ceVersion": "*"
+  },
+  "dependencies": [],
+  "capabilities": [
+    {
+      "kind": "emit-fhir",
+      "resourceTypes": [
+        "Patient",
+        "Specimen",
+        "Observation",
+        "DiagnosticReport",
+        "ServiceRequest"
+      ]
+    },
+    {
+      "kind": "net-egress",
+      "allowedHosts": []
+    }
+  ],
+  "source": "local-file",
+  "payload": {
+    "kind": "plugin",
+    "pluginKind": "source",
+    "wasmSha256": "d6031a8510474a0f03824567d8ab96dc8d70ffd05e000ff0e6c9b13922cceeba",
+    "entrypoint": "convert",
+    "entrypoints": [],
+    "wasi": true,
+    "limits": {
+      "memoryMb": 256,
+      "timeoutMs": 30000
+    }
+  },
+  "signature": "79722abde017a7b5ce816ced88c6cf433de091893da81159a2ee550dd0692dfe18fc541033741daa16723aed0bc4f07b1b78df68b2f7b1cee938f9f14c4f870d"
+}

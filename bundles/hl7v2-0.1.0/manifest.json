@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "type": "plugin",
+  "id": "hl7v2",
+  "version": "0.1.0",
+  "description": "HL7 v2 (ORU/ORM) -> FHIR R4 ingestion plugin",
+  "readme": "",
+  "license": "Apache-2.0",
+  "publisher": {
+    "id": "openldr-ref",
+    "name": "OpenLDR Reference Publisher",
+    "keyFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+  },
+  "compatibility": {
+    "ceVersion": "*"
+  },
+  "dependencies": [],
+  "capabilities": [
+    {
+      "kind": "read-input",
+      "formats": [
+        "hl7v2"
+      ]
+    },
+    {
+      "kind": "emit-fhir",
+      "resourceTypes": [
+        "Patient",
+        "Specimen",
+        "Observation",
+        "DiagnosticReport",
+        "ServiceRequest"
+      ]
+    }
+  ],
+  "source": "local-file",
+  "payload": {
+    "kind": "plugin",
+    "pluginKind": "source",
+    "wasmSha256": "a8d0b4d2c71bb6a09d0de873af4dee409c02fdeca65c05e0bf8ed253f8480f8c",
+    "entrypoint": "convert",
+    "entrypoints": [
+      "wf_convert"
+    ],
+    "wasi": true,
+    "limits": {
+      "memoryMb": 256,
+      "timeoutMs": 30000
+    },
+    "workflowNodes": [
+      {
+        "id": "convert",
+        "label": "HL7v2 → items",
+        "kind": "transform",
+        "description": "",
+        "entrypoint": "wf_convert",
+        "ports": {
+          "inputs": [
+            {
+              "name": "file",
+              "binary": false
+            }
+          ],
+          "outputs": [
+            {
+              "name": "out",
+              "binary": false
+            }
+          ]
+        },
+        "capabilities": [],
+        "config": [
+          {
+            "key": "output",
+            "label": "Output",
+            "type": "select",
+            "required": true,
+            "default": "fhir",
+            "options": [
+              {
+                "value": "fhir",
+                "label": "FHIR resources"
+              },
+              {
+                "value": "rows",
+                "label": "Parsed rows"
+              }
+            ]
+          },
+          {
+            "key": "organismIdCodes",
+            "label": "Organism ID codes",
+            "type": "json",
+            "required": false
+          },
+          {
+            "key": "astInterpretationCodes",
+            "label": "AST interpretation codes",
+            "type": "json",
+            "required": false
+          }
+        ],
+        "abi": "bytes",
+        "binaryField": "file"
+      }
+    ]
+  },
+  "signature": "f03bb880394716d06edbf5cdae018fece5ae055f5d755412953d5506702b3b5734ffcf06e8ad0097ef087f8dcb69eaf547f99f0ec74bf2d6f77566515567af09"
+}

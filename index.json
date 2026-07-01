@@ -1,8 +1,35 @@
 {
   "schemaVersion": 1,
   "name": "OpenLDR CE Marketplace",
-  "updatedAt": "2026-06-23T00:00:00Z",
+  "updatedAt": "2026-07-01T22:12:26.749Z",
   "packages": [
+    {
+      "id": "dhis2-sink",
+      "kind": "plugin",
+      "latestVersion": "0.1.0",
+      "publisher": "OpenLDR Reference Publisher",
+      "summary": "DHIS2 aggregate + tracker sink (mapping, metadata, push)",
+      "path": "bundles/dhis2-sink-0.1.0",
+      "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+    },
+    {
+      "id": "hl7v2",
+      "kind": "plugin",
+      "latestVersion": "0.1.0",
+      "publisher": "OpenLDR Reference Publisher",
+      "summary": "HL7 v2 (ORU/ORM) -> FHIR R4 ingestion plugin",
+      "path": "bundles/hl7v2-0.1.0",
+      "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+    },
+    {
+      "id": "tabular",
+      "kind": "plugin",
+      "latestVersion": "0.1.0",
+      "publisher": "OpenLDR Reference Publisher",
+      "summary": "CSV/Excel -> FHIR R4 ingestion plugin (configurable mapping)",
+      "path": "bundles/tabular-0.1.0",
+      "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+    },
     {
       "id": "whonet-sqlite",
       "kind": "plugin",
@@ -10,6 +37,15 @@
       "publisher": "OpenLDR Reference Publisher",
       "summary": "WHONET SQLite -> FHIR R4 (signed marketplace artifact)",
       "path": "bundles/whonet-sqlite-1.1.0",
+      "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+    },
+    {
+      "id": "whonet-sqlite",
+      "kind": "plugin",
+      "latestVersion": "1.2.0",
+      "publisher": "OpenLDR Reference Publisher",
+      "summary": "WHONET SQLite -> FHIR R4 (signed marketplace artifact)",
+      "path": "bundles/whonet-sqlite-1.2.0",
       "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
     }
   ]
