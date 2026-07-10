@@ -53,7 +53,7 @@
     },
     "ui": {
       "entry": "ui.html",
-      "sha256": "4dcaf86bd6af129cc0e306c4f8141eb99509562958365b29b0ba660eb96b21c0",
+      "sha256": "9a5199020be9982fcec2e8cd3cd0b2a5063209fb73cc0e6d47f4af01444b8d66",
       "nav": {
         "label": "DHIS2",
         "icon": "share-2",
@@ -117,5 +117,5 @@
       }
     ]
   },
-  "signature": "84a1e4bddcde95fdb046a936f64b4ce7c20117596f30fd3ccbb4705b5882e04e0e7ce7c7ddc852f8344bfa9606599d0b58db86b1d04f664d261367d179c53301"
+  "signature": "3e0c4281fe8e4d04ec271377946c773194353c83de2cc22d3825a5a3eeee3e58d5a61fbd62f53b548fc33affcae7a054212b90f2b126adb2a5f1da54374de207"
 }
