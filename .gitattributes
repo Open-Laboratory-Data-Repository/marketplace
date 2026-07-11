@@ -1,0 +1,5 @@
+# Every file under bundles/ is a byte-exact signed marketplace artifact: the manifest signature and
+# the payload/UI sha256 hashes are computed over the raw bytes at pack time. Git must never apply
+# EOL (CRLF) or any other normalization to them, or a Windows checkout changes the bytes and breaks
+# signature verification (verifyBundle → "Invalid signature"). Treat them all as binary.
+bundles/** -text
