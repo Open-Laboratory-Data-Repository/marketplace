@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "OpenLDR CE Marketplace",
-  "updatedAt": "2026-10-07T12:11:20.984Z",
+  "updatedAt": "2026-10-07T14:15:26.528Z",
   "packages": [
     {
       "id": "dhis2-sink",
@@ -51,10 +51,10 @@
     {
       "id": "vl-reports-mz",
       "kind": "content-pack",
-      "latestVersion": "0.3.0",
+      "latestVersion": "0.4.0",
       "publisher": "OpenLDR Content Publisher",
       "summary": "Viral load reports in the v1 layout, for data exported from DISA*Lab.",
-      "path": "bundles/vl-reports-mz-0.3.0",
+      "path": "bundles/vl-reports-mz-0.4.0",
       "signatureFingerprint": "69b5920dc40a601cd61736e71998f3dcc138407717b5b632ee99a519674314be"
     }
   ]
