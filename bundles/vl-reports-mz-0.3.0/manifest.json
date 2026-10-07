@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "type": "content-pack",
+  "id": "vl-reports-mz",
+  "version": "0.3.0",
+  "description": "Viral load reports in the v1 layout, for data exported from DISA*Lab.",
+  "readme": "# Viral load reports (v1 layout)\r\n\r\nThis pack adds two custom queries that give viral load data in the column layout of the\r\nOpenLDR v1 views `viewVL_Info` and `viewVL_Result`. It is for labs whose data comes from DISA*Lab.\r\nIt also installs Mozambique's lab register and health facility register.\r\n\r\n## What it installs\r\n\r\nIn this order:\r\n\r\n1. Code system and value set for the POC sites: `urn:openldr:mz:poc-sites`.\r\n2. Code system and value set for the link sites: `urn:openldr:mz:link-sites`.\r\n3. The lab register `urn:openldr:mz:laboratories` (laboratories and POC sites), code `MZLABS`.\r\n4. The health facility register `urn:openldr:mz:facilities`, code `MZFAC`. It has 2,830\r\n   facilities from the v1 dictionary view `viewFacilities`, keyed on the DISA facility code.\r\n5. Link-matching against the facility register.\r\n6. Link-matching against the lab register.\r\n7. The queries \"VL info\" and \"VL results\".\r\n\r\nLink-matching links each observed facility code to the register row with the same code. It does\r\nnot look at whether the code came in as a testing lab or a requesting facility. 45 codes are in\r\nboth registers, and each pair names the same place. The facility register links first, so these\r\n45 codes link to the facility rows, which carry province and district. Their testing labs show\r\nthe facility register's name.\r\n\r\nInstalling again is safe. It replaces the terminology and the two queries, and updates the\r\nregister rows. A register you already loaded under the same URL is reused, not duplicated. A\r\nquery you edited under one of these names is overwritten.\r\n\r\nThe facility register has the code, name, province and district. It also keeps v1's province and\r\ndistrict codes in each facility's `extras`, as `province_code` and `district_code`. Custom queries\r\nread them from the warehouse table `facility_registry`. It leaves out the facility type and the\r\nstatus (`HFStatus`): those need mapping to CE's values first.\r\n\r\nThis version needs a CE that supports extra register columns. An older CE refuses it and writes\r\nnothing.\r\n\r\n## Parameters\r\n\r\nBoth queries take the same three text parameters.\r\n\r\n- `from`, `to`: required. Dates as `YYYY-MM-DD`, on the registered time.\r\n- `facility`: requesting facility code. Leave it blank for all facilities. An older CE fails a\r\n  blank box with \"unbound parameter: facility\"; there, the report must send an empty string.\r\n\r\nA report run stops at 1000 rows. Narrow the dates for a big lab.\r\n\r\n## How the values differ from v1\r\n\r\n- The columns keep v1's names and order.\r\n- `HL7PriorityCode` is the FHIR priority (`routine`), not `R`.\r\n- `HL7ResultStatusCode` is the FHIR report status (`final`, `registered`), not `F`.\r\n- A reported value is the text value, else the numeric value, else the coded value. The full\r\n  numeric value is kept, so `61.736...` where v1 shows `62`. A value outside the reporting range\r\n  shows its comparator, as in `< 20`.\r\n- A true or false fact prints `true` or `false`, not `1` or `0`.\r\n- `DateTimeStamp` is the time CE wrote the row, not v1's time.\r\n\r\n## Columns that are always empty\r\n\r\n- `Versionstamp`, `LIMSVersionstamp`, `LIMSDateTimeStamp`: v1 row versions and times. CE has none.\r\n- `RequestingFacilityNationalCode`: the register is keyed on the lab system's code, not the\r\n  national code.\r\n- `LIMSFacilityCode`, `LIMSFacilityName`, `LIMSProvinceName`, `LIMSDistrictName`: CE stores the\r\n  requesting and the testing facility only.\r\n- `ReceivingFacilityCode`, `ReceivingFacilityName`, `ReceivingProvinceName`,\r\n  `ReceivingDistrictName`: not carried to CE.\r\n- Columns the data feed does not send today: `LIMSPreReg_*`, `LOINCPanelCode`,\r\n  `AdmitAttendDateTime`, `ICD10ClinicalInfoCodes`, `HL7SpecimenSourceCode`, the three\r\n  specimen-site columns, `HL7EthnicGroupCode`, `HL7PatientClassCode`, `ReferringRequestID`,\r\n  `WorkUnits`, `TargetTimeDays`, `TargetTimeMins`.\r\n\r\n## Columns not provided yet\r\n\r\nv1 computed these with database functions that are not available, so the raw inputs are\r\nreturned instead:\r\n\r\n| v1 column | Returned instead |\r\n|---|---|\r\n| `HIVVL_ViralLoadResult` | `HIVVD_LIMSRptResult`, `HIVVD_LIMSCodedValue` |\r\n| `HIVVL_ViralLoadCAPCTM` | `HIVVR_LIMSRptResult`, `HIVVR_LIMSCodedValue` |\r\n| `HIVVL_Low_value` | `HIVVC_LIMSRptResult`, `HIVVC_LIMSCodedValue` |\r\n| `HIVVL_Viral` | `HIVVF_LIMSRptResult`, `HIVVF_LIMSCodedValue` |\r\n| `FinalViralLoadResult` | the four pairs above |\r\n| `ReasonForTest` (info) | `ESCOL_LIMSRptResult` |\r\n\r\n## Known limits\r\n\r\n- A request with one observation code twice returns two rows, as v1 did.\r\n- The date filter compares text. A request registered near midnight at a UTC offset can fall on\r\n  the other side of `from` or `to`.\n\n## Rows left out of this build\n\nBuilt from OpenLDRDict_MZ. 8 rows left out.\n\n- register, DisaPoc AMAT: blank DisaPocLabNo, so no lab code\n- register, DisaPoc INCHO: blank DisaPocLabNo, so no lab code\n- register, DisaPoc CATAN: prefix 142 also used by CATND (HD Catandica, state 1); kept that one (state 0 here)\n- register, DisaPoc MANHC: prefix 127 also used by MNHIC (HD Manhica, state 1); kept that one (state 0 here)\n- register, DisaPoc MASSG: prefix 124 also used by MSSNG (CS Massinga, state 1); kept that one (state 0 here)\n- register, Laboratories 211: code 211 is also a POC prefix; kept the POC row \"CS Namarroi-Sede\" (v1 prefers the POC), dropped \"CS Namarroi-Sede,Zambézia Nama\"\n- register, Laboratories POC: blank LabName (LabType Point of care)\n- register, Laboratories ZXZ: blank LabName (LabType General)\n",
+  "license": "UNLICENSED",
+  "publisher": {
+    "id": "openldr-content",
+    "name": "OpenLDR Content Publisher",
+    "keyFingerprint": "69b5920dc40a601cd61736e71998f3dcc138407717b5b632ee99a519674314be"
+  },
+  "compatibility": {
+    "ceVersion": "*"
+  },
+  "dependencies": [],
+  "capabilities": [],
+  "source": "local-file",
+  "payload": {
+    "kind": "content-pack",
+    "packSha256": "0106b4415e31b51e0dbb719ff1676af7e59d51d8dcbf1c1a92b9cd7c4857bc82",
+    "steps": [
+      {
+        "kind": "code-system",
+        "label": "MozPocSites",
+        "count": 1
+      },
+      {
+        "kind": "value-set",
+        "label": "MozPocSites",
+        "count": 1
+      },
+      {
+        "kind": "code-system",
+        "label": "MozLinkSites",
+        "count": 1
+      },
+      {
+        "kind": "value-set",
+        "label": "MozLinkSites",
+        "count": 1
+      },
+      {
+        "kind": "facility-register",
+        "label": "Mozambique laboratories and POC sites",
+        "count": 311
+      },
+      {
+        "kind": "facility-register",
+        "label": "Mozambique health facilities",
+        "count": 2830
+      },
+      {
+        "kind": "link-matching",
+        "label": "urn:openldr:mz:facilities",
+        "count": 1
+      },
+      {
+        "kind": "link-matching",
+        "label": "urn:openldr:mz:laboratories",
+        "count": 1
+      },
+      {
+        "kind": "custom-queries",
+        "label": "VL info, VL results",
+        "count": 2
+      }
+    ]
+  },
+  "signature": "d8a9e28ca39d87a69907f6a7e0bf67b2df837dc515cc19a75b14c56817612ed70165ba66dbfd310d641cc407498268bfa10a8522edac86353ee8c2d0aaa51805"
+}
