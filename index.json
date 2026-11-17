@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "OpenLDR CE Marketplace",
-  "updatedAt": "2026-11-17T01:36:00.000Z",
+  "updatedAt": "2026-11-17T06:30:00.000Z",
   "packages": [
     {
       "id": "dhis2-sink",
@@ -56,6 +56,15 @@
       "summary": "Zambia's v1 reports in OpenLDR CE, for data exported from DISA*Lab.",
       "path": "bundles/reports-zm-0.1.2",
       "signatureFingerprint": "69b5920dc40a601cd61736e71998f3dcc138407717b5b632ee99a519674314be"
+    },
+    {
+      "id": "cdr-source",
+      "kind": "plugin",
+      "latestVersion": "0.1.0",
+      "publisher": "OpenLDR Reference Publisher",
+      "summary": "Imports a laboratory source database into OpenLDR and compares it with an OpenLDR v1 reference.",
+      "path": "bundles/cdr-source-0.1.0",
+      "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
     }
   ]
 }
