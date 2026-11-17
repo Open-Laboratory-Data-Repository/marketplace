@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "OpenLDR CE Marketplace",
-  "updatedAt": "2026-10-11T13:47:39.310Z",
+  "updatedAt": "2026-11-17T01:36:00.000Z",
   "packages": [
     {
       "id": "dhis2-sink",
@@ -28,15 +28,6 @@
       "publisher": "OpenLDR Reference Publisher",
       "summary": "CSV/Excel -> FHIR R4 ingestion plugin (configurable mapping)",
       "path": "bundles/tabular-0.1.0",
-      "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
-    },
-    {
-      "id": "whonet-sqlite",
-      "kind": "plugin",
-      "latestVersion": "1.1.0",
-      "publisher": "OpenLDR Reference Publisher",
-      "summary": "WHONET SQLite -> FHIR R4 (signed marketplace artifact)",
-      "path": "bundles/whonet-sqlite-1.1.0",
       "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
     },
     {
