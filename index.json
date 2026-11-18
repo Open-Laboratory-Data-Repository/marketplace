@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "OpenLDR CE Marketplace",
-  "updatedAt": "2026-11-18T08:30:00.000Z",
+  "updatedAt": "2026-11-18T10:00:00.000Z",
   "packages": [
     {
       "id": "dhis2-sink",
@@ -60,10 +60,10 @@
     {
       "id": "cdr-source",
       "kind": "plugin",
-      "latestVersion": "0.1.1",
+      "latestVersion": "0.1.2",
       "publisher": "OpenLDR Reference Publisher",
       "summary": "Imports a laboratory source database into OpenLDR and compares it with an OpenLDR v1 reference.",
-      "path": "bundles/cdr-source-0.1.1",
+      "path": "bundles/cdr-source-0.1.2",
       "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
     }
   ]
