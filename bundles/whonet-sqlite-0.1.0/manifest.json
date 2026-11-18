@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "type": "plugin",
+  "id": "whonet-sqlite",
+  "version": "0.1.0",
+  "description": "WHONET SQLite -> FHIR R4 AMR reference plugin",
+  "readme": "",
+  "license": "Apache-2.0",
+  "publisher": {
+    "id": "openldr-ref",
+    "name": "OpenLDR Reference Publisher",
+    "keyFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
+  },
+  "compatibility": {
+    "ceVersion": "*"
+  },
+  "dependencies": [],
+  "capabilities": [
+    {
+      "kind": "read-input",
+      "formats": [
+        "sqlite"
+      ]
+    },
+    {
+      "kind": "emit-fhir",
+      "resourceTypes": [
+        "Patient",
+        "Specimen",
+        "Observation",
+        "ServiceRequest"
+      ]
+    }
+  ],
+  "source": "local-file",
+  "payload": {
+    "kind": "plugin",
+    "pluginKind": "source",
+    "wasmSha256": "e34f92d91b09a4623bb57f5036c9996d12eb7b41b33ee9e1e4b951a64ae38aea",
+    "entrypoint": "convert",
+    "entrypoints": [
+      "wf_convert"
+    ],
+    "wasi": true,
+    "limits": {
+      "memoryMb": 256,
+      "timeoutMs": 30000
+    },
+    "workflowNodes": [
+      {
+        "id": "convert",
+        "label": "WHONET → items",
+        "kind": "transform",
+        "description": "",
+        "entrypoint": "wf_convert",
+        "ports": {
+          "inputs": [
+            {
+              "name": "file",
+              "binary": false
+            }
+          ],
+          "outputs": [
+            {
+              "name": "out",
+              "binary": false
+            }
+          ]
+        },
+        "capabilities": [],
+        "config": [
+          {
+            "key": "output",
+            "label": "Output",
+            "type": "select",
+            "required": true,
+            "default": "fhir",
+            "options": [
+              {
+                "value": "fhir",
+                "label": "FHIR resources"
+              },
+              {
+                "value": "rows",
+                "label": "Parsed rows"
+              }
+            ]
+          }
+        ],
+        "abi": "bytes",
+        "binaryField": "file"
+      }
+    ]
+  },
+  "signature": "e52c2f8bff3c2033f144964c2ea7eddf82c678269af4d09b00108ee5f90c2fa464278e06e814a727193376e2ff870ef0d9c378a11eaa299797f0a49951f5f207"
+}
