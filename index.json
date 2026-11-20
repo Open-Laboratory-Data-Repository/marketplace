@@ -60,10 +60,10 @@
     {
       "id": "cdr-source",
       "kind": "plugin",
-      "latestVersion": "0.1.4",
+      "latestVersion": "0.1.5",
       "publisher": "OpenLDR Reference Publisher",
       "summary": "Imports a laboratory source database into OpenLDR and compares it with an OpenLDR v1 reference.",
-      "path": "bundles/cdr-source-0.1.4",
+      "path": "bundles/cdr-source-0.1.5",
       "signatureFingerprint": "5ac92136598e4f7066ad726b74b5aed339a2d2f94579adf057caff5ed75d7cf5"
     }
   ]
